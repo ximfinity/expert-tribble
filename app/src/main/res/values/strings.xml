@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">PhantomFloor</string>
+    <string name="panel_title">PhantomFloor</string>
+    <string name="section_scene">Scene</string>
+    <string name="section_projection">Projection</string>
+    <string name="section_interaction">Interaction</string>
+    <string name="section_audio">Audio</string>
+    <string name="edit_keystone">Edit keystone</string>
+    <string name="reset_keystone">Reset</string>
+    <string name="camera_tracking">Camera tracking</string>
+    <string name="mode_feet">Feet (1 person)</string>
+    <string name="mode_bodies">Bodies (up to 5)</string>
+    <string name="calibrate_camera">Calibrate camera to floor</string>
+    <string name="show_tracking">Show tracked points</string>
+    <string name="touch_as_person">Touch acts as a person</string>
+    <string name="audio_reactive">Audio reactive</string>
+    <string name="hide_panel">Hide (3-finger tap to reopen)</string>
+    <string name="keystone_hint">Drag the 4 corners to fit the floor. 3-finger tap when done.</string>
+    <string name="calibration_hint">Calibrating: keep the floor clear and the camera still…</string>
+    <string name="calibration_done">Camera calibrated to the floor.</string>
+    <string name="calibration_failed">Calibration failed: %1$s</string>
+    <string name="permission_camera_denied">Camera permission denied. Tracking is off.</string>
+    <string name="permission_audio_denied">Microphone permission denied. Audio reactivity is off.</string>
+    <string name="first_run_hint">3-finger tap anywhere to open the controls</string>
+</resources>
