@@ -23,6 +23,15 @@
         android:textSize="14sp"
         android:visibility="gone" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/doneButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="32dp"
+        android:text="@string/done"
+        android:visibility="gone" />
+
     <ScrollView
         android:id="@+id/controlPanel"
         android:layout_width="380dp"

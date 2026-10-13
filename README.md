@@ -38,8 +38,8 @@ GitHub Actions builds the APK on every pull request and push to `main`. Open the
 ## Setting up a floor
 
 1. Mount the projector and the phone, and mirror the phone's screen to the projector.
-2. **3-finger tap** anywhere to open the control panel.
-3. **Edit keystone**: drag the 4 corner handles until the glowing grid fits the floor. You can drag several corners at once. 3-finger tap when done. The corners are saved.
+2. **Tap** anywhere on the projection to open the control panel; tap again to close it.
+3. **Edit keystone**: drag the 4 corner handles until the glowing grid fits the floor. You can drag several corners at once. Press **Done** when finished. The corners are saved.
 4. **Calibrate camera to floor**: keep the floor clear and hold the camera still. The projector shows a black frame, then four white dots one at a time. The camera finds each dot and fits a camera→floor homography. This also absorbs the keystone and any camera tilt. The result is saved.
 5. Choose a scene and tune its sliders. Turn on **Show tracked points** to see green rings under detected feet.
 
@@ -48,7 +48,7 @@ With **Touch acts as a person** turned on, fingers on the screen act as feet. Th
 ## Architecture
 
 ```
-MainActivity ── immersive, FLAG_KEEP_SCREEN_ON, permissions, 3-finger tap, ControlPanel (ViewBinding)
+MainActivity ── immersive, FLAG_KEEP_SCREEN_ON, permissions, tap to toggle, ControlPanel (ViewBinding)
  │
  ├─ PhantomSurfaceView (GLES 3.0)  ── keystone drag / touch-as-person input
  │   └─ PhantomRenderer (GL thread, vsync)

@@ -2,6 +2,7 @@ package com.phantomfloor
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.view.MotionEvent
@@ -26,7 +27,7 @@ import com.phantomfloor.engine.TouchPeople
 import com.phantomfloor.scenes.Scene
 import com.phantomfloor.scenes.SceneParam
 import com.phantomfloor.ui.ControlPanel
-import com.phantomfloor.ui.MultiFingerTapDetector
+import com.phantomfloor.ui.TapDetector
 import com.phantomfloor.util.Prefs
 import com.phantomfloor.vision.CameraController
 import com.phantomfloor.vision.FloorCalibrator
@@ -39,7 +40,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Wires the engine together: GL renderer, camera/ML Kit pipeline, microphone analyzer, and the
- * hidden control overlay (3-finger tap). Runs full-screen, immersive, screen always on.
+ * hidden control overlay (tap the floor to toggle). Runs full-screen, immersive, screen always on.
  */
 class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
 
@@ -47,7 +48,7 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
     private lateinit var prefs: Prefs
     private lateinit var renderer: PhantomRenderer
     private lateinit var panel: ControlPanel
-    private lateinit var tapDetector: MultiFingerTapDetector
+    private lateinit var tapDetector: TapDetector
     private lateinit var camera: CameraController
     private lateinit var vision: FloorVisionPipeline
     private lateinit var audio: AudioAnalyzer
@@ -109,7 +110,7 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
         panel.build(sceneIndex)
         bindControls()
 
-        tapDetector = MultiFingerTapDetector(this, fingers = 3) { onThreeFingerTap() }
+        tapDetector = TapDetector(this) { onFloorTap() }
 
         trackingEnabled = prefs.trackingEnabled
         if (trackingEnabled) ensureCameraThenStart()
@@ -179,13 +180,21 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
     // --- Gestures -------------------------------------------------------------------------------
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        tapDetector.onTouchEvent(ev)
+        // Only taps on the projection count; taps on the panel or Done button are theirs.
+        if (ev.actionMasked != MotionEvent.ACTION_DOWN || !isOverControls(ev)) tapDetector.onTouchEvent(ev)
         return super.dispatchTouchEvent(ev)
     }
 
-    private fun onThreeFingerTap() {
+    private fun isOverControls(ev: MotionEvent): Boolean {
+        val rect = Rect()
+        return listOf(binding.controlPanel, binding.doneButton).any {
+            it.visibility == View.VISIBLE && it.getGlobalVisibleRect(rect) && rect.contains(ev.rawX.toInt(), ev.rawY.toInt())
+        }
+    }
+
+    private fun onFloorTap() {
         when {
-            settings.keystoneEdit -> exitKeystoneEdit()
+            settings.keystoneEdit -> Unit // corners are dragged here; the Done button finishes
             calibrator.isActive -> {
                 calibrator.cancel()
                 hideHint()
@@ -233,6 +242,7 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
         }
 
         closeButton.setOnClickListener { panel.hide() }
+        doneButton.setOnClickListener { exitKeystoneEdit() }
     }
 
     override fun onSceneSelected(index: Int) {
@@ -252,11 +262,13 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
         panel.hide()
         touches.clear()
         settings.keystoneEdit = true
+        binding.doneButton.visibility = View.VISIBLE
         showHint(getString(R.string.keystone_hint))
     }
 
     private fun exitKeystoneEdit() {
         settings.keystoneEdit = false
+        binding.doneButton.visibility = View.GONE
         prefs.saveKeystone(keystone.corners())
         hideHint()
         panel.show()
