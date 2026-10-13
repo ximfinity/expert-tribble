@@ -17,6 +17,15 @@ pockets in the fog are where two "people" are standing.*
 - A projector pointed at the floor, fed by the device over HDMI / USB-C (screen mirroring).
 - Optional: the device's camera pointed at the projected area (for tracking), and a microphone.
 
+## Install without the Android SDK
+
+GitHub Actions builds the APK on every pull request and push to `main`. Open the repo's
+**Actions** tab, pick the latest **Build APK** run, and download **PhantomFloor-debug-apk**
+(a zip containing `app-debug.apk`). Then either:
+
+- copy the APK to the phone and tap it (allow installs from that app when asked), or
+- run `adb install -r app-debug.apk` using Google's standalone Platform Tools.
+
 ## Build
 
 ```bash
