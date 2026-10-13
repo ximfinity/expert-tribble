@@ -23,8 +23,17 @@ class SwarmScene : Scene("swarm", "The Swarm") {
     private val cohesion = SceneParam("cohesion", "Clumping", 0f, 2f, 0.6f)
     private val style = SceneParam("style", "Shadow ↔ Spectral", 0f, 1f, 0f, step = 1f)
     private val light = SceneParam("light", "Floor lantern light", 0f, 1f, 0.6f)
+    private val flashPower = SceneParam("flash", "Flashlight brightness", 0f, 1.5f, 0.9f)
+    private val flashSize = SceneParam("flashSize", "Flashlight size", 0.08f, 0.45f, 0.2f)
+    private val flashSpeed = SceneParam("flashSpeed", "Flashlight sweep speed", 0.2f, 2.5f, 1f)
+    private val lightFear = SceneParam("lightFear", "Spiders flee the light", 0f, 1f, 0.7f)
 
-    override val params = listOf(count, speed, spiderSize, fear, cohesion, style, light)
+    override val params = listOf(
+        count, speed, spiderSize, fear, cohesion, style, light,
+        flashPower, flashSize, flashSpeed, lightFear,
+    )
+
+    private val flashlight = Flashlight()
 
     private val swarm = BoidSwarm(MAX_SPIDERS)
     private lateinit var floorProgram: GlProgram
@@ -74,6 +83,11 @@ class SwarmScene : Scene("swarm", "The Swarm") {
         swarm.perception = 0.075f * spiderSize.value.coerceAtLeast(1f)
         swarm.fleeRadius = fear.value
         swarm.wCohesion = cohesion.value
+        flashlight.update(frame.dt, frame.aspect, flashSpeed.value)
+        swarm.lightX = flashlight.x
+        swarm.lightY = flashlight.y
+        swarm.lightRadius = flashSize.value
+        swarm.wLight = if (flashPower.value > 0.05f) lightFear.value else 0f
         if (frame.beatTriggered && frame.level > 0.3f) swarm.startle(min(1f, 0.4f + frame.level))
         // Sub-step so fast feet can't tunnel through the swarm on a frame hitch.
         val steps = if (frame.dt > 1f / 45f) 2 else 1
@@ -82,12 +96,14 @@ class SwarmScene : Scene("swarm", "The Swarm") {
 
     override fun draw(frame: FrameState) {
         val shadowStyle = style.value < 0.5f
-        if (shadowStyle) {
-            floorProgram.use()
-            floorProgram.setCommon(frame)
-            floorProgram.set1f("uLight", light.value)
-            gl.drawFullscreen()
-        }
+        // Floor: lantern ambience (shadow style only) plus the flashlight beam in both styles.
+        floorProgram.use()
+        floorProgram.setCommon(frame)
+        floorProgram.set1f("uLight", if (shadowStyle) light.value else 0f)
+        floorProgram.set2f("uFlash", flashlight.x, flashlight.y)
+        floorProgram.set1f("uFlashRadius", flashSize.value)
+        floorProgram.set1f("uFlashPower", flashPower.value)
+        gl.drawFullscreen()
 
         val n = swarm.count
         instanceData.clear()

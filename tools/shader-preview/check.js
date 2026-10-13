@@ -118,7 +118,7 @@ for (const f of files) src[f] = load(f);
     // SWARM: floor + instanced spiders (shadow style), then spectral style
     for (const [name, style] of [['swarm', 0], ['swarm_spectral', 1]]) {
       screen();
-      if (style === 0) { p = progs['swarm_floor.frag']; gl.useProgram(p); common(2.0, people); f1('uLight', 0.6); fsq(); }
+      p = progs['swarm_floor.frag']; gl.useProgram(p); common(2.0, people); f1('uLight', style === 0 ? 0.6 : 0.0); gl.uniform2f(u('uFlash'), 1.25, 0.55); f1('uFlashRadius', 0.2); f1('uFlashPower', 0.9); fsq();
       const n = 120, data = new Float32Array(n * 6);
       let seed = 1; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
       for (let i = 0; i < n; i++) data.set([0.1 + rnd() * (W2 - 0.2), 0.1 + rnd() * 0.8, rnd() * 6.28, 0.028 * (0.75 + rnd() * 0.5), rnd() * 6.28, rnd() < 0.2 ? 1 : 0], i * 6);

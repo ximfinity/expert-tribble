@@ -54,6 +54,12 @@ class BoidSwarm(val capacity: Int, seed: Int = 1337) {
     var wWander = 0.35f
     var baseSize = 0.028f
 
+    // Light to avoid (world units). Strength 0 disables it.
+    var lightX = 0f
+    var lightY = 0f
+    var lightRadius = 0.2f
+    var wLight = 0f
+
     // Spatial grid
     private var gridW = 1
     private var gridH = 1
@@ -194,6 +200,21 @@ class BoidSwarm(val capacity: Int, seed: Int = 1337) {
                     fx += dx * s
                     fy += dy * s
                     panic[i] = max(panic[i], min(1f, k * threat * 0.8f))
+                    pause[i] = 0f
+                }
+            }
+
+            // Spiders scurry out of the flashlight beam (milder than fleeing a foot).
+            if (wLight > 0f) {
+                val dx = xi - lightX
+                val dy = yi - lightY
+                val d = sqrt(dx * dx + dy * dy)
+                if (d < lightRadius) {
+                    val k = 1f - d / lightRadius
+                    val s = k * wLight * 1.2f / max(d, 0.01f)
+                    fx += dx * s
+                    fy += dy * s
+                    panic[i] = max(panic[i], k * 0.35f * wLight)
                     pause[i] = 0f
                 }
             }
