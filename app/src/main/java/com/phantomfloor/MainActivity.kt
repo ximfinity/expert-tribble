@@ -104,7 +104,7 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
 
         renderer = PhantomRenderer(applicationContext, keystone, settings, tracker, touches, audio, calibrator)
         prefs.loadParams(renderer.scenes)
-        val sceneIndex = prefs.sceneIndex.coerceIn(0, renderer.scenes.lastIndex)
+        val sceneIndex = renderer.scenes.indexOfFirst { it.id == prefs.sceneId }.coerceAtLeast(0)
         renderer.requestScene(sceneIndex)
 
         binding.glView.start(renderer, keystone, settings, touches)
@@ -260,7 +260,7 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
 
     override fun onSceneSelected(index: Int) {
         renderer.requestScene(index)
-        prefs.sceneIndex = index
+        prefs.sceneId = renderer.scenes[index].id
     }
 
     override fun onParamChanged(scene: Scene, param: SceneParam) {
