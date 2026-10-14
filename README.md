@@ -22,15 +22,60 @@ simulations (smoke, snow cover, garden growth, ripples) driven by a scripted wal
   mirroring / Miracast / Smart View) or HDMI / USB-C. See **Casting** below.
 - Optional: the device's camera pointed at the projected area (for tracking), and a microphone.
 
-## Install without the Android SDK
+## Installation
 
-Release builds are published on itch.io and GitHub Releases (see [RELEASING.md](RELEASING.md)).
-For test builds, GitHub Actions builds the APK on every pull request and push to `main`. Open the repo's
-**Actions** tab, pick the latest **Build APK** run, and download **PhantomFloor-debug-apk**
-(a zip containing `app-debug.apk`). Then either:
+### 1. Download
 
-- copy the APK to the phone and tap it (allow installs from that app when asked), or
-- run `adb install -r app-debug.apk` using Google's standalone Platform Tools.
+Get the latest `PhantomFloor-x.y.z.apk` from either:
+
+- **itch.io:** https://ximfinity.itch.io/phantom-floor-interactive-projector-floor-app (free, donations welcome), or
+- **GitHub Releases:** https://github.com/ximfinity/expert-tribble/releases/latest
+
+Download it **on the Android phone or tablet** you'll run it on (Android 8.0 or newer).
+
+### 2. Install on the phone
+
+1. Open the downloaded APK, from the browser's download bar or the **Files** app.
+2. If Android says installs from this source aren't allowed, tap **Settings**, turn on **Allow from
+   this source** for your browser or file manager, then go back.
+3. Tap **Install**.
+4. If **Play Protect** warns about an unknown app, tap **More details → Install anyway**. It's
+   flagged only because the app doesn't come from the Play Store.
+5. Open **PhantomFloor**, and allow **camera** (for tracking feet) and **microphone** (for
+   reacting to sound) when asked. Both are optional, and nothing leaves the phone.
+
+**Installing from a computer instead:** with USB debugging on, install Google's standalone
+[Platform Tools](https://developer.android.com/tools/releases/platform-tools) and run
+`adb install -r PhantomFloor-x.y.z.apk`.
+
+### 3. First run
+
+1. Point the projector at the floor and connect it (see **Casting** below), or plug in HDMI.
+2. **Tap** anywhere to open the controls, then press **Cast to projector / TV**.
+3. Press **Edit keystone**, drag the 4 corners to fit the floor, then press **Done**.
+4. Optional: **Calibrate camera to floor** so tracking lines up with the projection.
+5. Choose a season and a scene. Fingers on the phone act as feet if you don't use the camera.
+
+### Updating
+
+Download the new APK and install it over the old one. Your settings and keystone are kept. The app
+also shows **Update available** in the control panel when a newer GitHub Release exists (this
+works only while the GitHub repository is public).
+
+### Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| "App not installed" / "conflicts with an existing package" | The copy on the phone was signed with a different key, for example a test build from GitHub Actions. Uninstall PhantomFloor, then install again. |
+| "There was a problem parsing the package" | The download is incomplete or the phone is older than Android 8.0. Download it again. |
+| You tapped a `.zip` and nothing happened | Test builds from Actions come zipped. Unzip first, then open the `.apk` inside. |
+| Black screen on the projector | Make sure you're casting or mirroring, then tap to open the controls and pick a scene. |
+
+### Test builds (for development)
+
+Every pull request and push to `main` builds a test APK. Open **Actions → Build APK**, choose a
+run, and download **PhantomFloor-debug-apk**. Test builds are signed with a different key than
+releases, so uninstall one before installing the other.
 
 ## Build
 
