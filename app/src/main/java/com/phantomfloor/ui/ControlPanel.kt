@@ -9,6 +9,7 @@ import com.phantomfloor.databinding.ActivityMainBinding
 import com.phantomfloor.engine.EngineSettings
 import com.phantomfloor.scenes.Scene
 import com.phantomfloor.scenes.SceneParam
+import com.phantomfloor.scenes.Season
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -36,24 +37,7 @@ class ControlPanel(
 
     fun build(selectedScene: Int) {
         currentScene = selectedScene
-        binding.sceneGroup.removeAllViews()
-        scenes.forEachIndexed { i, scene ->
-            val chip = Chip(context).apply {
-                id = View.generateViewId()
-                text = scene.title
-                isCheckable = true
-                isCheckedIconVisible = true
-                isChecked = i == selectedScene
-                setOnClickListener {
-                    if (currentScene != i) {
-                        currentScene = i
-                        callbacks.onSceneSelected(i)
-                        buildParams()
-                    }
-                }
-            }
-            binding.sceneGroup.addView(chip)
-        }
+        buildSeasons(scenes[selectedScene].season)
         buildParams()
 
         binding.projectionContainer.removeAllViews()
@@ -70,6 +54,46 @@ class ControlPanel(
         binding.audioContainer.removeAllViews()
         addSlider(binding.audioContainer, "Audio sensitivity", 0f, 3f, 0f, settings.audioGain) {
             settings.audioGain = it; callbacks.onSettingsChanged()
+        }
+    }
+
+    /** Season chips on top; choosing one lists that season's scenes below. */
+    private fun buildSeasons(selected: Season) {
+        binding.seasonGroup.removeAllViews()
+        for (season in scenes.map { it.season }.distinct()) {
+            val chip = Chip(context).apply {
+                id = View.generateViewId()
+                text = season.label
+                isCheckable = true
+                isCheckedIconVisible = false
+                isChecked = season == selected
+                setOnClickListener { buildSceneChips(season) }
+            }
+            binding.seasonGroup.addView(chip)
+        }
+        buildSceneChips(selected)
+    }
+
+    private fun buildSceneChips(season: Season) {
+        binding.sceneGroup.removeAllViews()
+        scenes.forEachIndexed { i, scene ->
+            if (scene.season != season) return@forEachIndexed
+            val chip = Chip(context).apply {
+                id = View.generateViewId()
+                text = scene.title
+                isCheckable = true
+                isCheckedIconVisible = true
+                isChecked = i == currentScene
+                setOnClickListener {
+                    if (currentScene != i) {
+                        currentScene = i
+                        callbacks.onSceneSelected(i)
+                        buildParams()
+                    }
+                    isChecked = true
+                }
+            }
+            binding.sceneGroup.addView(chip)
         }
     }
 

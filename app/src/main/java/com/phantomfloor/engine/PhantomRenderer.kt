@@ -9,11 +9,8 @@ import com.phantomfloor.gl.GlProgram
 import com.phantomfloor.gl.GlResources
 import com.phantomfloor.gl.RenderTarget
 import com.phantomfloor.gl.ShaderSource
-import com.phantomfloor.scenes.CursedFluidScene
-import com.phantomfloor.scenes.FogScene
-import com.phantomfloor.scenes.LivingWaterScene
 import com.phantomfloor.scenes.Scene
-import com.phantomfloor.scenes.SwarmScene
+import com.phantomfloor.scenes.SceneCatalog
 import com.phantomfloor.vision.FloorCalibrator
 import com.phantomfloor.vision.PersonTracker
 import javax.microedition.khronos.egl.EGLConfig
@@ -42,7 +39,7 @@ class PhantomRenderer(
     private val calibrator: FloorCalibrator,
 ) : GLSurfaceView.Renderer {
 
-    val scenes: List<Scene> = listOf(FogScene(), SwarmScene(), CursedFluidScene(), LivingWaterScene())
+    val scenes: List<Scene> = SceneCatalog.create()
 
     @Volatile var fps = 0f
         private set
@@ -61,6 +58,8 @@ class PhantomRenderer(
     private lateinit var overlay: GlProgram
     private val targets = arrayOfNulls<RenderTarget>(scenes.size)
     private val failed = BooleanArray(scenes.size)
+    /** Scenes compile shaders lazily, on first use in each GL context, so startup stays fast. */
+    private val created = BooleanArray(scenes.size)
     private var screenW = 1
     private var screenH = 1
     private var appliedQuality = -1f
@@ -85,17 +84,12 @@ class PhantomRenderer(
         gl = GlResources(ShaderSource(context.assets))
         warp = gl.shaders.program("warp.vert", "warp.frag")
         overlay = gl.shaders.program("overlay.vert", "overlay.frag")
-        // New context: every old handle is gone, so forget (don't delete) the old targets.
+        // New context: every old handle is gone, so forget (don't delete) the old targets and
+        // let each scene rebuild itself the next time it is shown.
         targets.fill(null)
+        created.fill(false)
+        failed.fill(false)
         appliedQuality = -1f
-        scenes.forEachIndexed { i, scene ->
-            failed[i] = false
-            try {
-                scene.onSurfaceCreated(gl)
-            } catch (t: Throwable) {
-                fail(i, t)
-            }
-        }
         lastNanos = 0L
     }
 
@@ -105,21 +99,35 @@ class PhantomRenderer(
         rebuildTargets()
     }
 
+    /** Drops every canvas; [ensureReady] recreates them at the new size/quality on demand. */
     private fun rebuildTargets() {
         appliedQuality = settings.quality
-        scenes.forEachIndexed { i, scene ->
-            targets[i]?.release()
-            targets[i] = null
-            if (failed[i]) return@forEachIndexed
-            val scale = scene.resolutionScale * appliedQuality
-            val w = (screenW * scale).toInt().coerceAtLeast(16)
-            val h = (screenH * scale).toInt().coerceAtLeast(16)
-            targets[i] = RenderTarget.create(w, h)
-            try {
-                scene.onResize(w, h)
-            } catch (t: Throwable) {
-                fail(i, t)
+        for (i in scenes.indices) releaseTarget(i)
+    }
+
+    private fun releaseTarget(i: Int) {
+        targets[i]?.release()
+        targets[i] = null
+    }
+
+    /** Compiles the scene (once per context) and allocates its canvas (once per size). */
+    private fun ensureReady(i: Int) {
+        if (i < 0 || failed[i]) return
+        val scene = scenes[i]
+        try {
+            if (!created[i]) {
+                scene.onSurfaceCreated(gl)
+                created[i] = true
             }
+            if (targets[i] == null) {
+                val scale = scene.resolutionScale * appliedQuality
+                val w = (screenW * scale).toInt().coerceAtLeast(16)
+                val h = (screenH * scale).toInt().coerceAtLeast(16)
+                targets[i] = RenderTarget.create(w, h)
+                scene.onResize(w, h)
+            }
+        } catch (t: Throwable) {
+            fail(i, t)
         }
     }
 
@@ -148,7 +156,12 @@ class PhantomRenderer(
         }
         val transition = if (previousScene < 0) 1f
         else ((frame.time - transitionStart) / settings.transitionSeconds).coerceIn(0f, 1f)
-        if (transition >= 1f) previousScene = -1
+        if (transition >= 1f && previousScene >= 0) {
+            releaseTarget(previousScene) // only live scenes keep a full-size canvas
+            previousScene = -1
+        }
+        ensureReady(activeScene)
+        if (previousScene >= 0) ensureReady(previousScene)
 
         gatherInputs(now)
 

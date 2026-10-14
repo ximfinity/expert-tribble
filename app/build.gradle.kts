@@ -3,6 +3,15 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// Release CI passes -PappVersionName / -PappVersionCode from the git tag and run number.
+val appVersionName = (findProperty("appVersionName") as String?) ?: "1.0.0"
+val appVersionCode = (findProperty("appVersionCode") as String?)?.toInt() ?: 1
+val supportUrl = (findProperty("phantomSupportUrl") as String?) ?: "https://itch.io"
+val updateRepo = (findProperty("phantomUpdateRepo") as String?) ?: ""
+
+// Release signing comes from the environment (GitHub secrets in CI), never from the repo.
+val keystorePath: String? = System.getenv("SIGNING_KEYSTORE_PATH")
+
 android {
     namespace = "com.phantomfloor"
     compileSdk = 35
@@ -11,8 +20,11 @@ android {
         applicationId = "com.phantomfloor"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
+
+        buildConfigField("String", "SUPPORT_URL", "\"$supportUrl\"")
+        buildConfigField("String", "UPDATE_REPO", "\"$updateRepo\"")
 
         // ML Kit ships large native libraries for every ABI. Projector-driving phones and
         // Android TV boxes are ARM, so drop x86 (add "x86_64" back to run on an emulator).
@@ -21,8 +33,20 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            if (keystorePath != null) {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("SIGNING_STORE_PASSWORD")
+                keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+                keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (keystorePath != null) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -43,6 +67,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 }
 

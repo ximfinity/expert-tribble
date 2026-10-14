@@ -10,7 +10,7 @@ import com.phantomfloor.gl.GlResources
  *
  * [draw] renders into an already-bound, already-cleared canvas render target.
  */
-abstract class Scene(val id: String, val title: String) {
+abstract class Scene(val id: String, val title: String, val season: Season = Season.HALLOWEEN) {
 
     abstract val params: List<SceneParam>
 

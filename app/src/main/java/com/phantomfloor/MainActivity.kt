@@ -1,7 +1,10 @@
 package com.phantomfloor
 
 import android.Manifest
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
@@ -29,6 +32,7 @@ import com.phantomfloor.scenes.SceneParam
 import com.phantomfloor.ui.ControlPanel
 import com.phantomfloor.ui.TapDetector
 import com.phantomfloor.util.Prefs
+import com.phantomfloor.util.UpdateChecker
 import com.phantomfloor.vision.CameraController
 import com.phantomfloor.vision.FloorCalibrator
 import com.phantomfloor.vision.FloorMapping
@@ -118,6 +122,13 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
         if (prefs.firstRun) {
             prefs.firstRun = false
             showHint(getString(R.string.first_run_hint), autoHideMs = 6000)
+        }
+
+        lifecycleScope.launch {
+            val update = UpdateChecker(BuildConfig.UPDATE_REPO, BuildConfig.VERSION_NAME).check() ?: return@launch
+            binding.updateButton.text = getString(R.string.update_available, update.version)
+            binding.updateButton.visibility = View.VISIBLE
+            binding.updateButton.setOnClickListener { openUrl(update.url) }
         }
 
         lifecycleScope.launch {
@@ -242,6 +253,8 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
         }
 
         closeButton.setOnClickListener { panel.hide() }
+        supportButton.setOnClickListener { openUrl(BuildConfig.SUPPORT_URL) }
+        versionText.text = getString(R.string.version_label, BuildConfig.VERSION_NAME)
         doneButton.setOnClickListener { exitKeystoneEdit() }
     }
 
@@ -367,6 +380,14 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
     private fun hideHint() {
         binding.hintText.removeCallbacks(hideHintRunnable)
         binding.hintText.visibility = View.GONE
+    }
+
+    private fun openUrl(url: String) {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (e: ActivityNotFoundException) {
+            toast(url)
+        }
     }
 
     private fun granted(permission: String) =

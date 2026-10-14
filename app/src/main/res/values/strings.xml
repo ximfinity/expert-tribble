@@ -23,4 +23,7 @@
     <string name="permission_audio_denied">Microphone permission denied. Audio reactivity is off.</string>
     <string name="done">Done</string>
     <string name="first_run_hint">Tap anywhere to open the controls</string>
+    <string name="support">♥ Support PhantomFloor</string>
+    <string name="update_available">Update available: v%1$s, tap to download</string>
+    <string name="version_label">Version %1$s</string>
 </resources>
