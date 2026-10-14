@@ -34,7 +34,9 @@ class PhantomSurfaceView @JvmOverloads constructor(
         this.touches = touches
         setEGLContextClientVersion(3)
         setEGLConfigChooser(8, 8, 8, 8, 0, 0)
-        preserveEGLContextOnPause = true
+        // The renderer can move between this view and a projector display, so each resume must
+        // rebuild GL state rather than trust a preserved context.
+        preserveEGLContextOnPause = false
         setRenderer(renderer)
         renderMode = RENDERMODE_CONTINUOUSLY
         keepScreenOn = true

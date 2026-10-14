@@ -11,6 +11,17 @@
         android:layout_height="match_parent" />
 
     <TextView
+        android:id="@+id/castPad"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#0B0B10"
+        android:gravity="center"
+        android:padding="32dp"
+        android:textColor="#88FFFFFF"
+        android:textSize="16sp"
+        android:visibility="gone" />
+
+    <TextView
         android:id="@+id/hintText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -91,6 +102,13 @@
             <TextView
                 style="@style/PanelSection"
                 android:text="@string/section_projection" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/castButton"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/cast" />
 
             <LinearLayout
                 android:id="@+id/projectionContainer"

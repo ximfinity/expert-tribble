@@ -8,6 +8,7 @@ import android.net.Uri
 import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
+import android.view.Display
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
@@ -29,7 +30,9 @@ import com.phantomfloor.engine.PhantomRenderer
 import com.phantomfloor.engine.TouchPeople
 import com.phantomfloor.scenes.Scene
 import com.phantomfloor.scenes.SceneParam
+import com.phantomfloor.ui.CastController
 import com.phantomfloor.ui.ControlPanel
+import com.phantomfloor.ui.ProjectorPresentation
 import com.phantomfloor.ui.TapDetector
 import com.phantomfloor.util.Prefs
 import com.phantomfloor.util.UpdateChecker
@@ -66,6 +69,11 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
 
     private var trackingEnabled = false
     private var trackingRunning = false
+
+    private lateinit var cast: CastController
+    private var presentation: ProjectorPresentation? = null
+    /** False after the user stops projecting, so the same display isn't grabbed again. */
+    private var autoProject = true
 
     private val cameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) startTracking() else {
@@ -109,6 +117,12 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
 
         binding.glView.start(renderer, keystone, settings, touches)
         binding.glView.onKeystoneEdited = { prefs.saveKeystone(keystone.corners()) }
+
+        cast = CastController(this) { display -> onProjectorDisplayChanged(display) }
+        binding.castPad.setOnTouchListener { v, ev ->
+            presentation?.forwardTouch(ev, v.width, v.height)
+            true
+        }
 
         panel = ControlPanel(binding, renderer.scenes, settings, this)
         panel.build(sceneIndex)
@@ -168,15 +182,26 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
         if (hasFocus) hideSystemBars()
     }
 
+    override fun onStart() {
+        super.onStart()
+        cast.start()
+    }
+
+    override fun onStop() {
+        cast.stop()
+        stopProjecting()
+        super.onStop()
+    }
+
     override fun onResume() {
         super.onResume()
         hideSystemBars()
-        binding.glView.onResume()
+        presentation?.onResume() ?: binding.glView.onResume()
         if (settings.audioReactive) ensureAudioThenStart()
     }
 
     override fun onPause() {
-        binding.glView.onPause()
+        presentation?.onPause() ?: binding.glView.onPause()
         audio.stop()
         if (calibrator.isActive) calibrator.cancel()
         super.onPause()
@@ -253,6 +278,7 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
         }
 
         closeButton.setOnClickListener { panel.hide() }
+        castButton.setOnClickListener { onCastClicked() }
         supportButton.setOnClickListener { openUrl(BuildConfig.SUPPORT_URL) }
         versionText.text = getString(R.string.version_label, BuildConfig.VERSION_NAME)
         doneButton.setOnClickListener { exitKeystoneEdit() }
@@ -352,6 +378,72 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
 
     // --- Helpers --------------------------------------------------------------------------------
 
+    // --- Casting to a projector / TV ------------------------------------------------------------
+
+    private fun onCastClicked() {
+        val display = cast.display
+        when {
+            presentation != null -> {
+                autoProject = false
+                stopProjecting()
+            }
+            display != null -> {
+                autoProject = true
+                startProjecting(display)
+            }
+            else -> {
+                autoProject = true
+                toast(getString(R.string.cast_help))
+                cast.openCastSettings()
+            }
+        }
+    }
+
+    private fun onProjectorDisplayChanged(display: Display?) {
+        val current = presentation
+        if (current != null && (display == null || current.display.displayId != display.displayId)) stopProjecting()
+        if (display != null && presentation == null && autoProject) startProjecting(display)
+        updateCastButton()
+    }
+
+    /** Moves rendering to the external display; the phone becomes controls + touchpad. */
+    private fun startProjecting(display: Display) {
+        if (presentation != null) return
+        binding.glView.onPause()
+        binding.glView.visibility = View.GONE
+        val p = ProjectorPresentation(this, display, renderer, keystone, settings, touches)
+        try {
+            p.show()
+        } catch (e: WindowManager.InvalidDisplayException) {
+            binding.glView.visibility = View.VISIBLE
+            binding.glView.onResume()
+            return
+        }
+        presentation = p
+        binding.castPad.text = getString(R.string.cast_pad_hint, display.name)
+        binding.castPad.visibility = View.VISIBLE
+        updateCastButton()
+    }
+
+    private fun stopProjecting() {
+        val p = presentation ?: return
+        presentation = null
+        p.dismiss()
+        binding.castPad.visibility = View.GONE
+        binding.glView.visibility = View.VISIBLE
+        binding.glView.onResume()
+        updateCastButton()
+    }
+
+    private fun updateCastButton() {
+        val display = cast.display
+        binding.castButton.text = when {
+            presentation != null -> getString(R.string.cast_stop, presentation?.display?.name ?: "")
+            display != null -> getString(R.string.cast_start, display.name)
+            else -> getString(R.string.cast)
+        }
+    }
+
     private fun updateStatus() {
         val a = audio.levels
         val cam = when {
@@ -360,10 +452,11 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
             else -> "uncalibrated"
         }
         val err = renderer.lastError?.let { "\n⚠ $it" } ?: ""
+        val out = presentation?.display?.name?.let { " · on $it" } ?: ""
         binding.statusText.text = String.format(
             Locale.US,
-            "%.0f fps · %d tracked · cam %s %dms\nmic %s lvl %.2f bass %.2f%s",
-            renderer.fps, renderer.trackedCount, cam, vision.lastInferenceMs,
+            "%.0f fps%s · %d tracked · cam %s %dms\nmic %s lvl %.2f bass %.2f%s",
+            renderer.fps, out, renderer.trackedCount, cam, vision.lastInferenceMs,
             if (settings.audioReactive) "on" else "off", a.level, a.bass, err,
         )
     }
