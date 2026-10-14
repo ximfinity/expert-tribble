@@ -54,6 +54,10 @@ class GlProgram(vertexSource: String, fragmentSource: String, private val name: 
         val l = location(uniform); if (l >= 0) GLES30.glUniform2f(l, x, y)
     }
 
+    fun set3f(uniform: String, x: Float, y: Float, z: Float) {
+        val l = location(uniform); if (l >= 0) GLES30.glUniform3f(l, x, y, z)
+    }
+
     fun set4f(uniform: String, x: Float, y: Float, z: Float, w: Float) {
         val l = location(uniform); if (l >= 0) GLES30.glUniform4f(l, x, y, z, w)
     }

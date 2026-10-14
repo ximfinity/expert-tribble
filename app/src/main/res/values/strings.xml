@@ -23,4 +23,12 @@
     <string name="permission_audio_denied">Microphone permission denied. Audio reactivity is off.</string>
     <string name="done">Done</string>
     <string name="first_run_hint">Tap anywhere to open the controls</string>
+    <string name="support">♥ Support PhantomFloor</string>
+    <string name="update_available">Update available: v%1$s, tap to download</string>
+    <string name="version_label">Version %1$s</string>
+    <string name="cast">Cast to projector / TV</string>
+    <string name="cast_stop">Stop projecting to %1$s</string>
+    <string name="cast_start">Project to %1$s</string>
+    <string name="cast_pad_hint">Projecting to %1$s\n\nTouch here to walk on the floor.\nTap to show or hide the controls.</string>
+    <string name="cast_help">Pick your TV or projector in the cast menu, then come back. If it isn\'t listed, connect by HDMI or turn on the TV\'s screen mirroring.</string>
 </resources>

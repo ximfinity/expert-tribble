@@ -10,9 +10,10 @@ class Prefs(context: Context) {
 
     private val sp = context.getSharedPreferences("phantomfloor", Context.MODE_PRIVATE)
 
-    var sceneIndex: Int
-        get() = sp.getInt("scene", 0)
-        set(v) = sp.edit { putInt("scene", v) }
+    /** Saved by id, not list position, so adding scenes never changes which one reopens. */
+    var sceneId: String?
+        get() = sp.getString("sceneId", null)
+        set(v) = sp.edit { putString("sceneId", v) }
 
     var trackingEnabled: Boolean
         get() = sp.getBoolean("tracking", true)
