@@ -80,6 +80,9 @@ In `gradle.properties`:
 
 ## Cutting a release
 
+Either open **Actions → Release → Run workflow**, enter a version such as `1.1.0`, and run it on
+`main` (the workflow creates the `v1.1.0` tag), or push a tag yourself:
+
 ```bash
 git checkout main && git pull
 git tag v1.1.0
