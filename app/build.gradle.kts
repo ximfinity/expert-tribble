@@ -34,6 +34,14 @@ android {
     }
 
     signingConfigs {
+        // A fixed, public debug key (standard "android" passwords) so every CI test build is
+        // signed the same way and installs over the previous one. It can't sign release builds.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         create("release") {
             if (keystorePath != null) {
                 storeFile = file(keystorePath)
