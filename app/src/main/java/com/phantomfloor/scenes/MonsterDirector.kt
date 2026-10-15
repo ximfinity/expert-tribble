@@ -1,5 +1,6 @@
 package com.phantomfloor.scenes
 
+import com.phantomfloor.audio.Sfx
 import com.phantomfloor.engine.PersonPoint
 import kotlin.math.PI
 import kotlin.math.atan2
@@ -68,6 +69,9 @@ class MonsterDirector(seed: Int = 99) {
     var eyeCount = 0
         private set
 
+    /** Sound callback: effect and canvas uv x. */
+    var onSound: ((Sfx, Float) -> Unit)? = null
+
     /** Ripple impulse callback: canvas uv x, y, radius (world), strength. */
     var onSplash: ((Float, Float, Float, Float) -> Unit)? = null
 
@@ -109,6 +113,7 @@ class MonsterDirector(seed: Int = 99) {
                     m.age = m.emergeDur + m.holdDur
                     m.sinkDur = 0.9f
                     onSplash?.invoke(m.x / aspect, m.y, m.size * 0.5f, 0.9f)
+                    onSound?.invoke(Sfx.SPLASH, m.x / aspect)
                 }
             }
             // Water churns while it rises or falls.
@@ -171,6 +176,7 @@ class MonsterDirector(seed: Int = 99) {
         m.y = m.y.coerceIn(0.15f, 0.85f)
         m.angle = rng.nextFloat() * 2f * PI.toFloat()
         onSplash?.invoke(m.x / aspect, m.y, m.size * 0.4f, 0.6f)
+        onSound?.invoke(Sfx.GROWL, m.x / aspect)
     }
 
     private fun pack(aspect: Float) {

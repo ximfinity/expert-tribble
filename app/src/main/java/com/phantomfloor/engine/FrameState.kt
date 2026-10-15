@@ -1,5 +1,7 @@
 package com.phantomfloor.engine
 
+import com.phantomfloor.audio.SoundSink
+
 /** Everything a scene needs for one frame. Owned and mutated only by the GL thread. */
 class FrameState {
     var time = 0f
@@ -26,6 +28,9 @@ class FrameState {
 
     /** True only on the frame a new beat was detected. */
     var beatTriggered = false
+
+    /** Sound effects for this frame's events. */
+    var sound: SoundSink = SoundSink.None
 
     fun setPeople(points: List<PersonPoint>) {
         people.clear()

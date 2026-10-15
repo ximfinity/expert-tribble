@@ -1,6 +1,8 @@
 package com.phantomfloor.scenes
 
 import android.opengl.GLES30
+import com.phantomfloor.audio.Ambience
+import com.phantomfloor.audio.Sfx
 import com.phantomfloor.engine.FrameState
 import com.phantomfloor.gl.GlProgram
 import com.phantomfloor.gl.GlResources
@@ -25,6 +27,8 @@ class LivingWaterScene : Scene("water", "Living Water") {
 
     override val params = listOf(activity, monsterSize, caustics, glow, flow, splash)
     override val resolutionScale = 0.75f
+    override val ambience = Ambience(water = 0.6f, drone = 0.6f, droneHz = 38f, bubbles = 0.5f)
+    private var sink: com.phantomfloor.audio.SoundSink = com.phantomfloor.audio.SoundSink.None
 
     private lateinit var shapeProgram: GlProgram
     private lateinit var waterProgram: GlProgram
@@ -32,6 +36,7 @@ class LivingWaterScene : Scene("water", "Living Water") {
     private val ripples = RippleField()
     private val director = MonsterDirector().apply {
         onSplash = { x, y, r, s -> ripples.drop(x, y, r, s) }
+        onSound = { sfx, x -> sink.play(sfx, 0.9f, pan(x)) }
     }
     private var flowTime = 0f
     private val lastSplash = HashMap<Int, Float>()
@@ -52,6 +57,7 @@ class LivingWaterScene : Scene("water", "Living Water") {
     }
 
     override fun update(frame: FrameState) {
+        sink = frame.sound
         flowTime += frame.dt * flow.value * (1f + frame.bass)
         val s = splash.value
         for (p in frame.people) {
@@ -61,6 +67,7 @@ class LivingWaterScene : Scene("water", "Living Water") {
             if (frame.time - last > interval) {
                 lastSplash[p.id] = frame.time
                 ripples.drop(p.x, p.y, 0.016f, s * (0.3f + speed.coerceAtMost(1f) * 0.6f))
+                if (speed > 0.05f) frame.sound.play(Sfx.DRIP, 0.3f, pan(p.x))
             }
         }
         if (lastSplash.size > 64) lastSplash.clear()

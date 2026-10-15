@@ -26,6 +26,13 @@ class FloorCalibrator(
 
     val isActive get() = phase != Phase.IDLE
 
+    /**
+     * How long the camera takes to show a change on the floor beyond a phone camera's own delay.
+     * Network streams lag by up to a second or two, and sampling too early would credit the
+     * previous marker's position to the next one.
+     */
+    @Volatile var streamLatencyMs = 0L
+
     private var baseline: FloatArray? = null
     private var baselineFrames = 0
     private var phaseStartMs = -1L
@@ -57,7 +64,7 @@ class FloorCalibrator(
 
         when (phase) {
             Phase.BASELINE -> {
-                if (elapsed < SETTLE_MS) return
+                if (elapsed < SETTLE_MS + streamLatencyMs) return
                 val b = baseline ?: FloatArray(w * h).also { baseline = it }
                 for (i in b.indices) b[i] += grid[i]
                 if (++baselineFrames >= BASELINE_FRAMES) {
@@ -66,8 +73,8 @@ class FloorCalibrator(
                 }
             }
             Phase.MARKER -> {
-                if (elapsed < SETTLE_MS) return
-                if (elapsed > TIMEOUT_MS) return fail("marker ${markerIndex + 1} not seen; is the camera aimed at the projection?")
+                if (elapsed < SETTLE_MS + streamLatencyMs) return
+                if (elapsed > TIMEOUT_MS + streamLatencyMs) return fail("marker ${markerIndex + 1} not seen; is the camera aimed at the projection?")
                 val b = baseline ?: return fail("no baseline")
                 var maxDiff = 0f
                 for (i in grid.indices) maxDiff = maxOf(maxDiff, grid[i] - b[i])

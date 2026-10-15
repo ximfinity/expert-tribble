@@ -13,4 +13,6 @@ class EngineSettings {
     @Volatile var audioReactive = true
     @Volatile var audioGain = 1f
     @Volatile var transitionSeconds = 2.2f
+    @Volatile var soundEffects = true
+    @Volatile var soundVolume = 0.8f
 }

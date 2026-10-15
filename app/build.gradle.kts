@@ -101,5 +101,10 @@ dependencies {
     implementation("com.google.mlkit:pose-detection:18.0.0-beta5")
     implementation("com.google.mlkit:object-detection:17.0.2")
 
+    // Network (RTSP) cameras such as Wyze or IR security cameras, as an alternative tracking source
+    val media3 = "1.4.1"
+    implementation("androidx.media3:media3-exoplayer:$media3")
+    implementation("androidx.media3:media3-exoplayer-rtsp:$media3")
+
     testImplementation("junit:junit:4.13.2")
 }

@@ -1,6 +1,8 @@
 package com.phantomfloor.scenes
 
 import android.opengl.GLES30
+import com.phantomfloor.audio.Ambience
+import com.phantomfloor.audio.Sfx
 import com.phantomfloor.engine.FrameState
 import com.phantomfloor.gl.GlProgram
 import com.phantomfloor.gl.GlResources
@@ -29,6 +31,9 @@ class FirefliesScene : Scene("fireflies", "Fireflies", Season.SUMMER) {
     private val moon = SceneParam("moon", "Moonlight on grass", 0f, 1f, 0.6f)
 
     override val params = listOf(count, follow, sync, glow, moon)
+
+    override val ambience = Ambience(crickets = 1f, wind = 0.1f)
+    private var lastMeanPhase = 0f
 
     private lateinit var lawn: GlProgram
     private lateinit var sparkProgram: GlProgram
@@ -76,6 +81,9 @@ class FirefliesScene : Scene("fireflies", "Fireflies", Season.SUMMER) {
         val order = hypot(cs, sn) / max(n, 1)
         val meanPhase = atan2(sn, cs)
         val k = sync.value * 1.6f
+        // Once the swarm has synchronised, each collective flash rings softly.
+        if (order > 0.8f && lastMeanPhase < 0f && meanPhase >= 0f) frame.sound.play(Sfx.CHIME, 0.15f * order)
+        lastMeanPhase = meanPhase
 
         val people = frame.people
         for (i in 0 until n) {

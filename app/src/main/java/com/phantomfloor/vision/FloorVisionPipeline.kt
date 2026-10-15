@@ -22,12 +22,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 /**
- * CameraX analyzer -> coroutine -> ML Kit -> floor coordinates -> [PersonTracker].
+ * Camera frames -> coroutine -> ML Kit -> floor coordinates -> [PersonTracker].
  *
- * The analyzer callback only hands frames to a channel; detection runs in a coroutine on
- * [Dispatchers.Default] and suspends on ML Kit's Task with `await()`, so neither the camera
- * thread nor the GL render thread ever blocks. With STRATEGY_KEEP_ONLY_LATEST, CameraX won't
- * deliver the next frame until this one is closed, which gives natural backpressure.
+ * Frames come from CameraX (as an [ImageAnalysis.Analyzer]) or from a network camera via
+ * [submit]. The producer only hands frames to a one-slot channel; detection runs in a coroutine
+ * on [Dispatchers.Default] and suspends on ML Kit's Task with `await()`, so neither the camera
+ * thread nor the GL render thread ever blocks. A frame that arrives while one is still being
+ * processed is dropped at once, so the pipeline always works on a recent frame.
  */
 class FloorVisionPipeline(
     private val tracker: PersonTracker,
@@ -57,25 +58,25 @@ class FloorVisionPipeline(
         )
     }
 
-    @Volatile private var frames: Channel<ImageProxy>? = null
+    @Volatile private var frames: Channel<VisionFrame>? = null
     private var job: Job? = null
     private val luma = FloatArray(FloorCalibrator.GRID_W * FloorCalibrator.GRID_H)
     private val mapped = FloatArray(2)
 
     fun start(scope: CoroutineScope) {
         if (job?.isActive == true) return
-        val channel = Channel<ImageProxy>(Channel.BUFFERED)
+        val channel = Channel<VisionFrame>(1)
         frames = channel
         job = scope.launch(Dispatchers.Default) {
-            for (proxy in channel) {
+            for (frame in channel) {
                 try {
-                    process(proxy)
+                    process(frame)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (t: Throwable) {
                     Log.w(TAG, "Frame failed", t)
                 } finally {
-                    proxy.close()
+                    frame.close()
                 }
             }
         }
@@ -87,28 +88,34 @@ class FloorVisionPipeline(
         channel?.close()
         job?.cancel()
         job = null
-        // Release anything still queued so CameraX can continue.
+        // Release anything still queued so the producer can continue.
         while (true) channel?.tryReceive()?.getOrNull()?.close() ?: break
         tracker.clear()
     }
 
+    /** CameraX entry point. */
+    @OptIn(ExperimentalGetImage::class)
     override fun analyze(image: ImageProxy) {
-        val channel = frames
-        if (channel == null || !channel.trySend(image).isSuccess) image.close()
+        val media = image.image ?: return image.close()
+        submit(VisionFrame(media, image.imageInfo.rotationDegrees) { image.close() })
     }
 
-    @OptIn(ExperimentalGetImage::class)
-    private suspend fun process(proxy: ImageProxy) {
-        val rotation = proxy.imageInfo.rotationDegrees
+    /** Takes ownership of [frame]: it is closed after processing, or now if the pipeline is busy. */
+    fun submit(frame: VisionFrame) {
+        val channel = frames
+        if (channel == null || !channel.trySend(frame).isSuccess) frame.close()
+    }
+
+    private suspend fun process(frame: VisionFrame) {
+        val rotation = frame.rotation
         if (calibrator.isActive) {
-            sampleLuma(proxy)
+            sampleLuma(frame)
             calibrator.onLumaFrame(luma, FloorCalibrator.GRID_W, FloorCalibrator.GRID_H, rotation, SystemClock.elapsedRealtime())
             return
         }
-        val media = proxy.image ?: return
-        val input = InputImage.fromMediaImage(media, rotation)
-        val uprightW = if (rotation % 180 == 0) proxy.width else proxy.height
-        val uprightH = if (rotation % 180 == 0) proxy.height else proxy.width
+        val input = InputImage.fromMediaImage(frame.image, rotation)
+        val uprightW = if (rotation % 180 == 0) frame.width else frame.height
+        val uprightH = if (rotation % 180 == 0) frame.height else frame.width
         val started = SystemClock.elapsedRealtime()
 
         val camPoints = ArrayList<FloatArray>(8)
@@ -151,15 +158,15 @@ class FloorVisionPipeline(
     }
 
     /** Box-averages the Y plane into a small grid for marker detection. */
-    private fun sampleLuma(proxy: ImageProxy) {
-        val plane = proxy.planes[0]
+    private fun sampleLuma(frame: VisionFrame) {
+        val plane = frame.image.planes[0]
         val buf = plane.buffer
         val rowStride = plane.rowStride
         val pixStride = plane.pixelStride
         val gw = FloorCalibrator.GRID_W
         val gh = FloorCalibrator.GRID_H
-        val cellW = proxy.width / gw
-        val cellH = proxy.height / gh
+        val cellW = frame.width / gw
+        val cellH = frame.height / gh
         for (gy in 0 until gh) for (gx in 0 until gw) {
             var sum = 0
             var n = 0

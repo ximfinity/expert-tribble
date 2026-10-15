@@ -55,6 +55,9 @@ class ControlPanel(
         addSlider(binding.audioContainer, "Audio sensitivity", 0f, 3f, 0f, settings.audioGain) {
             settings.audioGain = it; callbacks.onSettingsChanged()
         }
+        addSlider(binding.audioContainer, "Effects volume", 0f, 1f, 0f, settings.soundVolume) {
+            settings.soundVolume = it; callbacks.onSettingsChanged()
+        }
     }
 
     /** Season chips on top; choosing one lists that season's scenes below. */

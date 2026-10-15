@@ -8,4 +8,5 @@ enum class Season(val label: String) {
     SPRING("Spring"),
     JULY_4TH("4th of July"),
     SUMMER("Summer"),
+    GAMES("Games"),
 }

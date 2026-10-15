@@ -10,6 +10,12 @@
     <string name="camera_tracking">Camera tracking</string>
     <string name="mode_feet">Feet (1 person)</string>
     <string name="mode_bodies">Bodies (up to 5)</string>
+    <string name="camera_phone">Phone camera</string>
+    <string name="camera_network">Network camera (RTSP)</string>
+    <string name="rtsp_url_hint">rtsp://user:password@192.168.1.50/live</string>
+    <string name="rtsp_connect">Connect</string>
+    <string name="rtsp_help">Wyze: install the RTSP firmware (or docker-wyze-bridge) and paste the camera\'s RTSP URL. Mount it above the floor; IR night vision works in the dark.</string>
+    <string name="rtsp_url_invalid">Enter an RTSP URL such as rtsp://user:password@192.168.1.50/live</string>
     <string name="calibrate_camera">Calibrate camera to floor</string>
     <string name="show_tracking">Show tracked points</string>
     <string name="touch_as_person">Touch acts as a person</string>
@@ -31,4 +37,5 @@
     <string name="cast_start">Project to %1$s</string>
     <string name="cast_pad_hint">Projecting to %1$s\n\nTouch here to walk on the floor.\nTap to show or hide the controls.</string>
     <string name="cast_help">Pick your TV or projector in the cast menu, then come back. If it isn\'t listed, connect by HDMI or turn on the TV\'s screen mirroring.</string>
+    <string name="sound_effects">Sound effects</string>
 </resources>
