@@ -198,6 +198,12 @@
                 android:layout_height="wrap_content"
                 android:text="@string/audio_reactive" />
 
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/soundSwitch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/sound_effects" />
+
             <LinearLayout
                 android:id="@+id/audioContainer"
                 android:layout_width="match_parent"

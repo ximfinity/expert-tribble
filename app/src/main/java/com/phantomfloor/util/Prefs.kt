@@ -41,6 +41,8 @@ class Prefs(context: Context) {
         s.touchAsPeople = sp.getBoolean("touchAsPeople", s.touchAsPeople)
         s.audioReactive = sp.getBoolean("audio", s.audioReactive)
         s.audioGain = sp.getFloat("audioGain", s.audioGain)
+        s.soundEffects = sp.getBoolean("soundEffects", s.soundEffects)
+        s.soundVolume = sp.getFloat("soundVolume", s.soundVolume)
     }
 
     fun saveSettings(s: EngineSettings) = sp.edit {
@@ -51,6 +53,8 @@ class Prefs(context: Context) {
         putBoolean("touchAsPeople", s.touchAsPeople)
         putBoolean("audio", s.audioReactive)
         putFloat("audioGain", s.audioGain)
+        putBoolean("soundEffects", s.soundEffects)
+        putFloat("soundVolume", s.soundVolume)
     }
 
     fun loadParams(scenes: List<Scene>) {

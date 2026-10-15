@@ -1,6 +1,8 @@
 package com.phantomfloor.scenes
 
 import android.opengl.GLES30
+import com.phantomfloor.audio.Ambience
+import com.phantomfloor.audio.Sfx
 import com.phantomfloor.engine.FrameState
 import com.phantomfloor.gl.GlProgram
 import com.phantomfloor.gl.GlResources
@@ -34,6 +36,8 @@ class SwarmScene : Scene("swarm", "The Swarm") {
     )
 
     private val flashlight = Flashlight()
+
+    override val ambience = Ambience(wind = 0.2f, drone = 0.4f, droneHz = 41f, skitter = 0.5f)
 
     private val swarm = BoidSwarm(MAX_SPIDERS)
     private lateinit var floorProgram: GlProgram
@@ -88,7 +92,15 @@ class SwarmScene : Scene("swarm", "The Swarm") {
         swarm.lightY = flashlight.y
         swarm.lightRadius = flashSize.value
         swarm.wLight = if (flashPower.value > 0.05f) lightFear.value else 0f
-        if (frame.beatTriggered && frame.level > 0.3f) swarm.startle(min(1f, 0.4f + frame.level))
+        if (frame.beatTriggered && frame.level > 0.3f) {
+            swarm.startle(min(1f, 0.4f + frame.level))
+            frame.sound.play(Sfx.SKITTER, 1f)
+        }
+        // Spiders scrabbling away from each moving foot.
+        for (p in frame.people) {
+            val v = kotlin.math.hypot(p.vx * frame.aspect, p.vy)
+            if (v > 0.08f && ready(p.id.toLong(), frame.time, 0.35f)) frame.sound.play(Sfx.SKITTER, 0.5f + min(v, 1f) * 0.5f, pan(p.x))
+        }
         // Sub-step so fast feet can't tunnel through the swarm on a frame hitch.
         val steps = if (frame.dt > 1f / 45f) 2 else 1
         repeat(steps) { swarm.step(frame.dt / steps, frame.people) }

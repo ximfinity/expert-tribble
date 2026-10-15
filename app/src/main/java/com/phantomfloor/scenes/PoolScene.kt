@@ -1,6 +1,8 @@
 package com.phantomfloor.scenes
 
 import android.opengl.GLES30
+import com.phantomfloor.audio.Ambience
+import com.phantomfloor.audio.Sfx
 import com.phantomfloor.engine.FrameState
 import com.phantomfloor.gl.GlProgram
 import com.phantomfloor.gl.GlResources
@@ -24,6 +26,9 @@ class PoolScene : Scene("pool", "Pool Splash", Season.SUMMER) {
 
     override val params = listOf(splash, waves, sun, calm)
     override val resolutionScale = 0.85f
+    override val ambience = Ambience(water = 0.8f, birds = 0.2f)
+    private var sink: com.phantomfloor.audio.SoundSink = com.phantomfloor.audio.SoundSink.None
+    private var dripsThisFrame = 0
 
     private lateinit var poolProgram: GlProgram
     private lateinit var sparkProgram: GlProgram
@@ -55,6 +60,7 @@ class PoolScene : Scene("pool", "Pool Splash", Season.SUMMER) {
     }
 
     private fun splashAt(x: Float, y: Float, aspect: Float, power: Float) {
+        sink.play(Sfx.SPLASH, (0.6f * power).coerceAtMost(1f), pan(x / aspect))
         ripples.drop(x / aspect, y, 0.04f * power, 0.9f * waves.value)
         val count = (40 * power).toInt()
         repeat(count) {
@@ -73,6 +79,8 @@ class PoolScene : Scene("pool", "Pool Splash", Season.SUMMER) {
         val dt = frame.dt
         val aspect = frame.aspect
         flowTime += dt
+        sink = frame.sound
+        dripsThisFrame = 0
         val power = splash.value
 
         for (p in frame.people) {
@@ -104,7 +112,10 @@ class PoolScene : Scene("pool", "Pool Splash", Season.SUMMER) {
             dx[i] += dvx[i] * dt
             dy[i] += dvy[i] * dt
             if (dh[i] <= 0f) {
-                if (dx[i] in 0f..aspect && dy[i] in 0f..1f) ripples.drop(dx[i] / aspect, dy[i], 0.008f, 0.15f * waves.value)
+                if (dx[i] in 0f..aspect && dy[i] in 0f..1f) {
+                    ripples.drop(dx[i] / aspect, dy[i], 0.008f, 0.15f * waves.value)
+                    if (dripsThisFrame++ < 2) sink.play(Sfx.DRIP, 0.2f, pan(dx[i] / aspect))
+                }
                 continue
             }
             if (w != i) {

@@ -6,6 +6,7 @@ import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.media.audiofx.AcousticEchoCanceler
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,6 +42,13 @@ class AudioAnalyzer(private val context: Context) {
 
     private var job: Job? = null
 
+    /** Beats are ignored until this time, so our own loud sound effects don't trigger effects. */
+    @Volatile private var suppressBeatsUntil = 0L
+
+    fun suppressBeats(millis: Long = 400) {
+        suppressBeatsUntil = System.nanoTime() + millis * 1_000_000L
+    }
+
     fun start(scope: CoroutineScope) {
         if (job?.isActive == true) return
         job = scope.launch(Dispatchers.IO) {
@@ -70,6 +78,8 @@ class AudioAnalyzer(private val context: Context) {
             record.release()
             error("AudioRecord failed to initialize")
         }
+        // Cancel the app's own sound effects out of the mic signal where the device supports it.
+        val echo = if (AcousticEchoCanceler.isAvailable()) AcousticEchoCanceler.create(record.audioSessionId)?.apply { enabled = true } else null
 
         val fft = Fft(N)
         val window = FloatArray(N) { (0.5 - 0.5 * cos(2.0 * PI * it / (N - 1))).toFloat() }
@@ -124,7 +134,7 @@ class AudioAnalyzer(private val context: Context) {
                 fluxHistory[fluxIndex] = flux
                 fluxIndex = (fluxIndex + 1) % FLUX_HISTORY
                 val now = System.nanoTime()
-                if (flux > mean + 1.6f * std && flux > MIN_FLUX && now - lastBeat > BEAT_COOLDOWN_NANOS) {
+                if (flux > mean + 1.6f * std && flux > MIN_FLUX && now - lastBeat > BEAT_COOLDOWN_NANOS && now > suppressBeatsUntil) {
                     beatCount++
                     lastBeat = now
                 }
@@ -143,6 +153,7 @@ class AudioAnalyzer(private val context: Context) {
                 levels = AudioLevels(env[0], env[1], env[2], env[3], beatCount, lastBeat)
             }
         } finally {
+            echo?.release()
             record.stop()
             record.release()
         }

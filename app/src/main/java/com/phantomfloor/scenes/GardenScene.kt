@@ -1,5 +1,7 @@
 package com.phantomfloor.scenes
 
+import com.phantomfloor.audio.Ambience
+import com.phantomfloor.audio.Sfx
 import com.phantomfloor.engine.FrameState
 import com.phantomfloor.gl.GlProgram
 import com.phantomfloor.gl.GlResources
@@ -20,6 +22,8 @@ class GardenScene : Scene("garden", "Spring Garden", Season.SPRING) {
     override val params = listOf(growSpeed, lasts, density, flowerSize, grass, footprint)
     override val resolutionScale = 0.85f
 
+    override val ambience = Ambience(birds = 0.6f, wind = 0.15f)
+
     private lateinit var program: GlProgram
     private val growth = StampField("garden_growth.frag")
     private var pendingWilt = 0f
@@ -37,6 +41,10 @@ class GardenScene : Scene("garden", "Spring Garden", Season.SPRING) {
 
     override fun update(frame: FrameState) {
         val dt = frame.dt
+        for (p in frame.people) {
+            val v = kotlin.math.hypot(p.vx * frame.aspect, p.vy)
+            if (v > 0.08f && ready(p.id.toLong(), frame.time, 0.7f)) frame.sound.play(Sfx.CHIME, 0.35f, pan(p.x))
+        }
         for (p in frame.people) growth.stamp(p.x, p.y, footprint.value, (dt * 6f).coerceAtMost(1f))
         // Wilting is slow; batch it so it survives 8-bit storage.
         pendingWilt += dt / (lasts.value * 60f)

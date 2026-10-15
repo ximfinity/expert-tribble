@@ -8,7 +8,8 @@ import com.phantomfloor.gl.RenderTarget
 /**
  * A persistent low-res field (ping-pong) that footsteps "stamp" into: snow depth with
  * footprints, garden growth. The update shader gets the previous state as `uState`, plus
- * `uStamps[]` (x, y uv, radius world, strength) and whatever uniforms [step] sets.
+ * `uStamps[]` (x, y uv, radius world, strength), `uStampsB[]` (four extra per-stamp values:
+ * footprint direction and side, or a paint colour), and whatever uniforms [step] sets.
  */
 class StampField(private val fragment: String, private val simHeight: Int = 256) {
 
@@ -17,6 +18,8 @@ class StampField(private val fragment: String, private val simHeight: Int = 256)
     private val targets = arrayOfNulls<RenderTarget>(2)
     private var current = 0
     private val stamps = FloatArray(MAX_STAMPS * 4)
+    private val stampsB = FloatArray(MAX_STAMPS * 4)
+    private var clearColor = floatArrayOf(0f, 0f, 0f, 0f)
     private var stampCount = 0
     var aspect = 1f
         private set
@@ -48,7 +51,13 @@ class StampField(private val fragment: String, private val simHeight: Int = 256)
         targets[0] = a
         targets[1] = b
         current = 0
-        GLES30.glClearColor(clear[0], clear[1], clear[2], clear[3])
+        clearColor = clear.copyOf()
+        reset()
+    }
+
+    /** Resets both buffers to the clear colour given to [onResize]. */
+    fun reset() {
+        GLES30.glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3])
         for (t in targets) {
             t ?: continue
             t.bind()
@@ -57,10 +66,14 @@ class StampField(private val fragment: String, private val simHeight: Int = 256)
         GLES30.glClearColor(0f, 0f, 0f, 1f)
     }
 
-    fun stamp(x: Float, y: Float, radius: Float, strength: Float) {
+    fun stamp(
+        x: Float, y: Float, radius: Float, strength: Float,
+        b0: Float = 0f, b1: Float = 0f, b2: Float = 0f, b3: Float = 0f,
+    ) {
         if (stampCount >= MAX_STAMPS) return
         val o = stampCount * 4
         stamps[o] = x; stamps[o + 1] = y; stamps[o + 2] = radius; stamps[o + 3] = strength
+        stampsB[o] = b0; stampsB[o + 1] = b1; stampsB[o + 2] = b2; stampsB[o + 3] = b3
         stampCount++
     }
 
@@ -74,7 +87,10 @@ class StampField(private val fragment: String, private val simHeight: Int = 256)
         program.set2f("uTexel", 1f / src.width, 1f / src.height)
         program.set1f("uAspect", aspect)
         program.set1i("uStampCount", stampCount)
-        if (stampCount > 0) program.set4fv("uStamps", stamps, stampCount)
+        if (stampCount > 0) {
+            program.set4fv("uStamps", stamps, stampCount)
+            program.set4fv("uStampsB", stampsB, stampCount)
+        }
         uniforms(program)
         gl.drawFullscreen()
         current = 1 - current

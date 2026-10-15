@@ -1,6 +1,8 @@
 package com.phantomfloor.scenes
 
 import android.opengl.GLES30
+import com.phantomfloor.audio.Ambience
+import com.phantomfloor.audio.Sfx
 import com.phantomfloor.engine.FrameState
 import com.phantomfloor.gl.GlProgram
 import com.phantomfloor.gl.GlResources
@@ -36,11 +38,19 @@ class SnowScene(private val theme: Theme) : Scene(theme.id, theme.title, Season.
         Theme.HANUKKAH -> listOf(night, snowfall, flakeSize, wind, refill, lights)
     }
 
+    override val ambience = when (theme) {
+        Theme.SNOW -> Ambience(wind = 0.55f)
+        Theme.CHRISTMAS -> Ambience(wind = 0.4f, chimes = 0.25f)
+        Theme.HANUKKAH -> Ambience(wind = 0.4f, chimes = 0.15f, drone = 0.15f, droneHz = 110f)
+    }
+
     private lateinit var ground: GlProgram
     private lateinit var flakeProgram: GlProgram
     private val cover = StampField("snow_cover.frag")
     private val sprites = SpriteBatch(MAX_FLAKES)
     private var pendingFill = 0f
+    private val footsteps = FootstepTracker()
+    private val prints = ArrayList<FootstepTracker.Footprint>()
 
     private val rng = Random(theme.ordinal * 31 + 5)
     private val fx = FloatArray(MAX_FLAKES)
@@ -120,8 +130,13 @@ class SnowScene(private val theme: Theme) : Scene(theme.id, theme.title, Season.
         // Snow cover: batch tiny refills so 8-bit fields still accumulate.
         pendingFill += dt * refill.value * 0.05f * (0.3f + snowfall.value)
         val fill = if (pendingFill >= 0.01f || !cover.lowPrecision) pendingFill.also { pendingFill = 0f } else 0f
-        val press = (dt * 10f).coerceAtMost(0.9f)
-        for (p in frame.people) cover.stamp(p.x, p.y, 0.028f, press)
+        // Each stride presses one shoe-shaped print, alternating feet along the walking direction.
+        prints.clear()
+        footsteps.update(frame.people, aspect, frame.time, prints)
+        for (f in prints) {
+            cover.stamp(f.x, f.y, PRINT_LENGTH, 0.85f, f.dirX, f.dirY, f.side)
+            frame.sound.play(Sfx.CRUNCH, 0.5f, f.x * 2f - 1f)
+        }
         cover.step {
             it.set1f("uFill", fill)
             it.set1f("uSoften", if (fill > 0f) 0.15f else 0f)
@@ -173,5 +188,6 @@ class SnowScene(private val theme: Theme) : Scene(theme.id, theme.title, Season.
 
     companion object {
         private const val MAX_FLAKES = 900
+        private const val PRINT_LENGTH = 0.075f
     }
 }

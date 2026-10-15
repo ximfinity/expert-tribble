@@ -1,5 +1,7 @@
 package com.phantomfloor.scenes
 
+import com.phantomfloor.audio.Ambience
+import com.phantomfloor.audio.Sfx
 import com.phantomfloor.engine.FrameState
 import com.phantomfloor.gl.GlProgram
 import com.phantomfloor.gl.GlResources
@@ -18,6 +20,7 @@ class CursedFluidScene : Scene("fluid", "Cursed Fluid") {
 
     override val params = listOf(mode, pool, bubbles, flow, glow, splash)
     override val resolutionScale = 0.75f
+    override val ambience = Ambience(bubbles = 3f, drone = 0.4f, droneHz = 36f, water = 0.25f)
 
     private lateinit var program: GlProgram
     private val ripples = RippleField()
@@ -47,6 +50,7 @@ class CursedFluidScene : Scene("fluid", "Cursed Fluid") {
             if (frame.time - last > interval) {
                 lastSplash[p.id] = frame.time
                 ripples.drop(p.x, p.y, 0.018f, s * (0.25f + speed.coerceAtMost(1f) * 0.6f))
+                frame.sound.play(Sfx.SQUISH, 0.25f + speed.coerceAtMost(1f) * 0.35f, pan(p.x))
             }
         }
         if (lastSplash.size > 64) lastSplash.clear()

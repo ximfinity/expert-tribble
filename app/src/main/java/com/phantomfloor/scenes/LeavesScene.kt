@@ -1,6 +1,8 @@
 package com.phantomfloor.scenes
 
 import android.opengl.GLES30
+import com.phantomfloor.audio.Ambience
+import com.phantomfloor.audio.Sfx
 import com.phantomfloor.engine.FrameState
 import com.phantomfloor.gl.GlProgram
 import com.phantomfloor.gl.GlResources
@@ -25,6 +27,8 @@ class LeavesScene : Scene("leaves", "Fall Leaves", Season.FALL) {
     private val light = SceneParam("light", "Ground light", 0f, 1f, 0.6f)
 
     override val params = listOf(count, leafSize, kick, wind, light)
+
+    override val ambience = Ambience(wind = 0.6f, birds = 0.05f)
 
     private lateinit var groundProgram: GlProgram
     private lateinit var leafProgram: GlProgram
@@ -78,6 +82,10 @@ class LeavesScene : Scene("leaves", "Fall Leaves", Season.FALL) {
         val n = count.int
         val reach = 0.07f * leafSize.value
 
+        for (p in frame.people) {
+            val v = hypot(p.vx * aspect, p.vy)
+            if (v > 0.1f && ready(p.id.toLong(), frame.time, 0.3f)) frame.sound.play(Sfx.RUSTLE, (0.4f + v).coerceAtMost(1f) * kick.value.coerceAtMost(1f), pan(p.x))
+        }
         for (i in 0 until n) {
             for (p in frame.people) {
                 val dx = x[i] - p.x * aspect

@@ -5,6 +5,7 @@ import android.opengl.GLES30
 import android.opengl.GLSurfaceView
 import android.util.Log
 import com.phantomfloor.audio.AudioAnalyzer
+import com.phantomfloor.audio.SoundEngine
 import com.phantomfloor.gl.GlProgram
 import com.phantomfloor.gl.GlResources
 import com.phantomfloor.gl.RenderTarget
@@ -37,6 +38,7 @@ class PhantomRenderer(
     private val touches: TouchPeople,
     private val audio: AudioAnalyzer,
     private val calibrator: FloorCalibrator,
+    private val sound: SoundEngine,
 ) : GLSurfaceView.Renderer {
 
     val scenes: List<Scene> = SceneCatalog.create()
@@ -153,7 +155,9 @@ class PhantomRenderer(
             previousScene = activeScene
             activeScene = wanted
             transitionStart = frame.time
+            sound.setAmbience(scenes[activeScene].ambience)
         }
+        frame.sound = sound
         val transition = if (previousScene < 0) 1f
         else ((frame.time - transitionStart) / settings.transitionSeconds).coerceIn(0f, 1f)
         if (transition >= 1f && previousScene >= 0) {

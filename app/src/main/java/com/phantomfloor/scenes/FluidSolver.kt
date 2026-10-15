@@ -101,12 +101,15 @@ class FluidSolver(private val simHeight: Int = 160) {
         velCount++
     }
 
-    /** Adds dye; a negative [amount] removes it. */
-    fun splatDye(x: Float, y: Float, radius: Float, amount: Float) {
+    /**
+     * Adds dye: [amount] of smoke density (negative removes it) plus [r], [g], [b] of colour that
+     * is carried along with the smoke.
+     */
+    fun splatDye(x: Float, y: Float, radius: Float, amount: Float, r: Float = 0f, g: Float = 0f, b: Float = 0f) {
         if (dyeCount >= MAX_SPLATS) return
         val o = dyeCount * 4
         dyePos[o] = x; dyePos[o + 1] = y; dyePos[o + 2] = radius
-        dyeVal[o] = amount; dyeVal[o + 1] = 0f; dyeVal[o + 2] = 0f; dyeVal[o + 3] = 0f
+        dyeVal[o] = amount; dyeVal[o + 1] = r; dyeVal[o + 2] = g; dyeVal[o + 3] = b
         dyeCount++
     }
 
@@ -127,8 +130,8 @@ class FluidSolver(private val simHeight: Int = 160) {
         val tx = 1f / width
         val ty = 1f / height
 
-        applySplats(vel, velPos, velVal, velCount, clampMin = -1e4f)
-        applySplats(dyeField, dyePos, dyeVal, dyeCount, clampMin = 0f)
+        applySplats(vel, velPos, velVal, velCount, clampMin = -1e4f, radial = true)
+        applySplats(dyeField, dyePos, dyeVal, dyeCount, clampMin = 0f, radial = false)
         velCount = 0
         dyeCount = 0
 
@@ -200,12 +203,13 @@ class FluidSolver(private val simHeight: Int = 160) {
         dyeField.swap()
     }
 
-    private fun applySplats(field: PingPong, pos: FloatArray, value: FloatArray, count: Int, clampMin: Float) {
+    private fun applySplats(field: PingPong, pos: FloatArray, value: FloatArray, count: Int, clampMin: Float, radial: Boolean) {
         if (count == 0) return
         field.write.bind()
         splat.use()
         splat.set1f("uAspect", aspect)
         splat.set1f("uClampMin", clampMin)
+        splat.set1f("uRadialMode", if (radial) 1f else 0f)
         splat.set1i("uSplatCount", count)
         splat.set4fv("uSplatPos", pos, count)
         splat.set4fv("uSplatVal", value, count)

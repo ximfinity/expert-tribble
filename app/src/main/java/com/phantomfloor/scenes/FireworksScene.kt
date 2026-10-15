@@ -1,6 +1,8 @@
 package com.phantomfloor.scenes
 
 import android.opengl.GLES30
+import com.phantomfloor.audio.Ambience
+import com.phantomfloor.audio.Sfx
 import com.phantomfloor.engine.FrameState
 import com.phantomfloor.gl.GlProgram
 import com.phantomfloor.gl.GlResources
@@ -29,6 +31,10 @@ class FireworksScene : Scene("fireworks", "Fireworks", Season.JULY_4TH) {
     private val smoke = SceneParam("smoke", "Smoke", 0f, 1f, 0.5f)
 
     override val params = listOf(burstSize, stride, trails, idleShow, patriotic, smoke)
+
+    override val ambience = Ambience(crickets = 0.3f)
+    private var sink: com.phantomfloor.audio.SoundSink = com.phantomfloor.audio.SoundSink.None
+    private var aspectNow = 16f / 9f
 
     private lateinit var sparkProgram: GlProgram
     private lateinit var solid: GlProgram
@@ -122,6 +128,9 @@ class FireworksScene : Scene("fireworks", "Fireworks", Season.JULY_4TH) {
             }
         }
         flashes.add(Flash(x, y, 0f, c[0], c[1], c[2]))
+        val p = pan(x / aspectNow)
+        sink.play(Sfx.BOOM, (0.6f * power).coerceAtMost(1f), p)
+        if (rng.nextFloat() < 0.6f) sink.play(Sfx.CRACKLE, 0.7f, p)
         if (smoke.value > 0f) repeat(4) {
             val a = rng.nextFloat() * TAU
             puffs.add(Puff(x, y, cos(a) * 0.03f, sin(a) * 0.03f, 0f, 4f + rng.nextFloat() * 3f, 0.06f + 0.06f * rng.nextFloat()))
@@ -132,6 +141,8 @@ class FireworksScene : Scene("fireworks", "Fireworks", Season.JULY_4TH) {
     override fun update(frame: FrameState) {
         val dt = frame.dt
         val aspect = frame.aspect
+        sink = frame.sound
+        aspectNow = aspect
 
         // Bursts from walking: one per [stride] of distance, and one the moment someone appears.
         for (p in frame.people) {

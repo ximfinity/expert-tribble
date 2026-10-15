@@ -23,6 +23,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.phantomfloor.audio.AudioAnalyzer
+import com.phantomfloor.audio.SoundEngine
 import com.phantomfloor.databinding.ActivityMainBinding
 import com.phantomfloor.engine.EngineSettings
 import com.phantomfloor.engine.Keystone
@@ -59,6 +60,7 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
     private lateinit var camera: CameraController
     private lateinit var vision: FloorVisionPipeline
     private lateinit var audio: AudioAnalyzer
+    private val sound = SoundEngine()
 
     private val settings = EngineSettings()
     private val keystone = Keystone()
@@ -110,7 +112,9 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
         vision = FloorVisionPipeline(tracker, mapping, calibrator)
         vision.mode = if (prefs.trackingBodies) FloorVisionPipeline.Mode.BODIES else FloorVisionPipeline.Mode.FEET
 
-        renderer = PhantomRenderer(applicationContext, keystone, settings, tracker, touches, audio, calibrator)
+        sound.onLoudSound = { audio.suppressBeats() }
+        applySoundSettings()
+        renderer = PhantomRenderer(applicationContext, keystone, settings, tracker, touches, audio, calibrator, sound)
         prefs.loadParams(renderer.scenes)
         val sceneIndex = renderer.scenes.indexOfFirst { it.id == prefs.sceneId }.coerceAtLeast(0)
         renderer.requestScene(sceneIndex)
@@ -198,11 +202,13 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
         hideSystemBars()
         presentation?.onResume() ?: binding.glView.onResume()
         if (settings.audioReactive) ensureAudioThenStart()
+        sound.start()
     }
 
     override fun onPause() {
         presentation?.onPause() ?: binding.glView.onPause()
         audio.stop()
+        sound.stop()
         if (calibrator.isActive) calibrator.cancel()
         super.onPause()
     }
@@ -270,6 +276,13 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
             if (!checked) touches.clear()
         }
 
+        soundSwitch.isChecked = settings.soundEffects
+        soundSwitch.setOnCheckedChangeListener { _, checked ->
+            settings.soundEffects = checked
+            applySoundSettings()
+            prefs.saveSettings(settings)
+        }
+
         audioSwitch.isChecked = settings.audioReactive
         audioSwitch.setOnCheckedChangeListener { _, checked ->
             settings.audioReactive = checked
@@ -294,7 +307,13 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
     }
 
     override fun onSettingsChanged() {
+        applySoundSettings()
         prefs.saveSettings(settings)
+    }
+
+    private fun applySoundSettings() {
+        sound.enabled = settings.soundEffects
+        sound.volume = settings.soundVolume
     }
 
     private fun enterKeystoneEdit() {
