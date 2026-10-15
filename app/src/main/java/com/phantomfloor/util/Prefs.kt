@@ -23,6 +23,15 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("trackingBodies", false)
         set(v) = sp.edit { putBoolean("trackingBodies", v) }
 
+    /** Tracking camera: the phone's own, or a network camera at [rtspUrl]. */
+    var networkCamera: Boolean
+        get() = sp.getBoolean("networkCamera", false)
+        set(v) = sp.edit { putBoolean("networkCamera", v) }
+
+    var rtspUrl: String
+        get() = sp.getString("rtspUrl", "") ?: ""
+        set(v) = sp.edit { putString("rtspUrl", v) }
+
     var firstRun: Boolean
         get() = sp.getBoolean("firstRun", true)
         set(v) = sp.edit { putBoolean("firstRun", v) }
@@ -30,8 +39,13 @@ class Prefs(context: Context) {
     fun loadKeystone(): FloatArray? = floats("keystone", 8)
     fun saveKeystone(c: FloatArray) = putFloats("keystone", c)
 
-    fun loadCalibration(): FloatArray? = floats("calibration", 9)
-    fun saveCalibration(m: FloatArray?) = if (m == null) sp.edit { remove("calibration") } else putFloats("calibration", m)
+    /** Camera-to-floor mapping, kept separately for the phone camera and the network camera. */
+    fun loadCalibration(network: Boolean): FloatArray? = floats(calibrationKey(network), 9)
+    fun saveCalibration(network: Boolean, m: FloatArray?) {
+        val key = calibrationKey(network)
+        if (m == null) sp.edit { remove(key) } else putFloats(key, m)
+    }
+    private fun calibrationKey(network: Boolean) = if (network) "calibrationNet" else "calibration"
 
     fun loadSettings(s: EngineSettings) {
         s.brightness = sp.getFloat("brightness", s.brightness)

@@ -12,6 +12,7 @@ import android.view.Display
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -42,6 +43,7 @@ import com.phantomfloor.vision.FloorCalibrator
 import com.phantomfloor.vision.FloorMapping
 import com.phantomfloor.vision.FloorVisionPipeline
 import com.phantomfloor.vision.PersonTracker
+import com.phantomfloor.vision.RtspCameraSource
 import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -59,6 +61,7 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
     private lateinit var tapDetector: TapDetector
     private lateinit var camera: CameraController
     private lateinit var vision: FloorVisionPipeline
+    private lateinit var rtsp: RtspCameraSource
     private lateinit var audio: AudioAnalyzer
     private val sound = SoundEngine()
 
@@ -102,7 +105,7 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
         prefs = Prefs(this)
         prefs.loadSettings(settings)
         prefs.loadKeystone()?.let(keystone::setAll)
-        mapping.set(prefs.loadCalibration())
+        mapping.set(prefs.loadCalibration(prefs.networkCamera))
 
         calibrator = FloorCalibrator(mapping) { ok, message ->
             runOnUiThread { onCalibrationFinished(ok, message) }
@@ -110,6 +113,7 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
         audio = AudioAnalyzer(applicationContext)
         camera = CameraController(this, this)
         vision = FloorVisionPipeline(tracker, mapping, calibrator)
+        rtsp = RtspCameraSource(applicationContext) { frame -> vision.submit(frame) }
         vision.mode = if (prefs.trackingBodies) FloorVisionPipeline.Mode.BODIES else FloorVisionPipeline.Mode.FEET
 
         sound.onLoudSound = { audio.suppressBeats() }
@@ -189,10 +193,13 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
     override fun onStart() {
         super.onStart()
         cast.start()
+        // CameraX follows the lifecycle by itself; the network stream is resumed here.
+        if (trackingRunning && prefs.networkCamera && rtsp.state == RtspCameraSource.State.OFF) rtsp.start(prefs.rtspUrl)
     }
 
     override fun onStop() {
         cast.stop()
+        rtsp.stop()
         stopProjecting()
         super.onStop()
     }
@@ -214,6 +221,7 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
     }
 
     override fun onDestroy() {
+        rtsp.stop()
         vision.close()
         camera.shutdown()
         super.onDestroy()
@@ -265,6 +273,23 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
             tracker.clear()
         }
         calibrateButton.setOnClickListener { startCalibration() }
+
+        (if (prefs.networkCamera) networkCameraChip else phoneCameraChip).isChecked = true
+        rtspGroup.visibility = if (prefs.networkCamera) View.VISIBLE else View.GONE
+        rtspUrlInput.setText(prefs.rtspUrl)
+        cameraSourceGroup.setOnCheckedStateChangeListener { _, ids ->
+            val network = ids.firstOrNull() == networkCameraChip.id
+            if (network == prefs.networkCamera) return@setOnCheckedStateChangeListener
+            prefs.networkCamera = network
+            rtspGroup.visibility = if (network) View.VISIBLE else View.GONE
+            // Each camera sees the floor from its own angle, so each keeps its own calibration.
+            mapping.set(prefs.loadCalibration(network))
+            restartTracking()
+        }
+        rtspConnectButton.setOnClickListener { connectRtsp() }
+        rtspUrlInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) { connectRtsp(); true } else false
+        }
 
         debugSwitch.isChecked = settings.showTracking
         debugSwitch.setOnCheckedChangeListener { _, checked ->
@@ -342,11 +367,25 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
     }
 
     private fun ensureCameraThenStart() {
-        if (granted(Manifest.permission.CAMERA)) startTracking() else cameraPermission.launch(Manifest.permission.CAMERA)
+        // A network camera needs no camera permission.
+        if (prefs.networkCamera || granted(Manifest.permission.CAMERA)) startTracking()
+        else cameraPermission.launch(Manifest.permission.CAMERA)
     }
 
     private fun startTracking() {
         if (trackingRunning) return
+        if (prefs.networkCamera) {
+            val url = prefs.rtspUrl
+            if (!RtspCameraSource.isValidUrl(url)) {
+                toast(getString(R.string.rtsp_url_invalid))
+                binding.rtspUrlInput.requestFocus()
+                return
+            }
+            trackingRunning = true
+            vision.start(lifecycleScope)
+            rtsp.start(url)
+            return
+        }
         trackingRunning = true
         vision.start(lifecycleScope)
         lifecycleScope.launch {
@@ -363,8 +402,31 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
     private fun stopTracking() {
         trackingRunning = false
         camera.stop()
+        rtsp.stop()
         vision.stop()
         calibrator.cancel()
+    }
+
+    /** Applies a change of camera source or URL. */
+    private fun restartTracking() {
+        stopTracking()
+        if (trackingEnabled) ensureCameraThenStart()
+    }
+
+    private fun connectRtsp() {
+        val url = binding.rtspUrlInput.text.toString().trim()
+        hideKeyboard()
+        if (!RtspCameraSource.isValidUrl(url)) {
+            toast(getString(R.string.rtsp_url_invalid))
+            return
+        }
+        prefs.rtspUrl = url
+        if (!trackingEnabled) setTrackingEnabled(true) else restartTracking()
+    }
+
+    private fun hideKeyboard() {
+        binding.rtspUrlInput.clearFocus()
+        WindowInsetsControllerCompat(window, binding.rtspUrlInput).hide(WindowInsetsCompat.Type.ime())
     }
 
     private fun startCalibration() {
@@ -374,13 +436,14 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
         }
         panel.hide()
         showHint(getString(R.string.calibration_hint))
+        calibrator.streamLatencyMs = if (prefs.networkCamera) NETWORK_LATENCY_MS else 0L
         calibrator.start()
     }
 
     private fun onCalibrationFinished(ok: Boolean, message: String) {
         hideHint()
         if (ok) {
-            prefs.saveCalibration(mapping.get())
+            prefs.saveCalibration(prefs.networkCamera, mapping.get())
             toast(getString(R.string.calibration_done))
         } else {
             toast(getString(R.string.calibration_failed, message))
@@ -465,10 +528,16 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
 
     private fun updateStatus() {
         val a = audio.levels
+        val calib = if (mapping.isCalibrated) "calibrated" else "uncalibrated"
         val cam = when {
             !trackingRunning -> "off"
-            mapping.isCalibrated -> "calibrated"
-            else -> "uncalibrated"
+            prefs.networkCamera -> when (rtsp.state) {
+                RtspCameraSource.State.STREAMING ->
+                    String.format(Locale.US, "rtsp %dx%d %.0ffps %s", rtsp.videoWidth, rtsp.videoHeight, rtsp.fps, calib)
+                RtspCameraSource.State.RETRYING -> "rtsp retrying (${rtsp.lastError})"
+                else -> "rtsp connecting"
+            }
+            else -> calib
         }
         val err = renderer.lastError?.let { "\n⚠ $it" } ?: ""
         val out = presentation?.display?.name?.let { " · on $it" } ?: ""
@@ -506,4 +575,9 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
         ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 
     private fun toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_LONG).show()
+
+    companion object {
+        /** Extra settle time per calibration marker for an RTSP camera's stream delay. */
+        private const val NETWORK_LATENCY_MS = 2000L
+    }
 }
