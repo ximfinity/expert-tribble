@@ -59,6 +59,11 @@ class SpriteBatch(val capacity: Int) {
         count++
     }
 
+    /** Copies sprite [index]'s 12 floats into [out] (CPU side, for tests). */
+    fun read(index: Int, out: FloatArray) {
+        for (k in 0 until FLOATS) out[k] = data.get(index * FLOATS + k)
+    }
+
     /** Uploads and draws everything added since [begin]. The caller binds the program and blend state. */
     fun draw() {
         if (count == 0) return

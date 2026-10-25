@@ -204,7 +204,21 @@ abstract class GameScene(id: String, title: String) : Scene(id, title, Season.GA
         background.set3f("uAccent", accent[0], accent[1], accent[2])
         gl.drawFullscreen()
         drawUnderlay()
+        compose(frame)
 
+        GLES30.glEnable(GLES30.GL_BLEND)
+        GLES30.glBlendFunc(GLES30.GL_ONE, GLES30.GL_ONE_MINUS_SRC_ALPHA)
+        shapeProgram.use()
+        shapeProgram.set1f("uAspect", aspect)
+        shapeProgram.set1f("uTime", frame.time)
+        shapeProgram.set2f("uOffset", 0f, 0f)
+        shapes.draw()
+        for (l in labels) text.draw(l.s, l.x, l.y, l.h, aspect, l.r, l.g, l.b, l.a)
+        GLES30.glDisable(GLES30.GL_BLEND)
+    }
+
+    /** Builds this frame's shapes and labels. CPU only, so play-test bots can "see" the floor. */
+    private fun compose(frame: FrameState) {
         shapes.begin()
         labels.clear()
         val mid = aspect / 2f
@@ -243,17 +257,30 @@ abstract class GameScene(id: String, title: String) : Scene(id, title, Season.GA
             val a = (1f - c.age / 2.5f).coerceIn(0f, 1f)
             shape(SHAPE_PAD, c.x, c.y, 0.008f, c.r, c.g, c.b, a, p1 = 0.2f, angle = c.spin)
         }
-
-        GLES30.glEnable(GLES30.GL_BLEND)
-        GLES30.glBlendFunc(GLES30.GL_ONE, GLES30.GL_ONE_MINUS_SRC_ALPHA)
-        shapeProgram.use()
-        shapeProgram.set1f("uAspect", aspect)
-        shapeProgram.set1f("uTime", frame.time)
-        shapeProgram.set2f("uOffset", 0f, 0f)
-        shapes.draw()
-        for (l in labels) text.draw(l.s, l.x, l.y, l.h, aspect, l.r, l.g, l.b, l.a)
-        GLES30.glDisable(GLES30.GL_BLEND)
     }
+
+    // --- Headless play-testing (see app/src/test/.../playtest) ----------------------------------
+
+    /** One shape on the floor: type (SHAPE_*), centre and half-size in world units, alpha, params. */
+    internal class SeenShape(val type: Int, val x: Float, val y: Float, val size: Float, val alpha: Float, val p1: Float, val p2: Float, val p3: Float)
+    internal class SeenText(val text: String, val x: Float, val y: Float, val height: Float)
+    internal class Snapshot(val shapes: List<SeenShape>, val texts: List<SeenText>)
+
+    /** What a player would see this frame, without touching GL. */
+    internal fun snapshot(frame: FrameState): Snapshot {
+        compose(frame)
+        val seen = ArrayList<SeenShape>(shapes.count)
+        val f = FloatArray(SpriteBatch.FLOATS)
+        for (i in 0 until shapes.count) {
+            shapes.read(i, f)
+            seen += SeenShape(f[8].toInt(), f[0], f[1], f[3], f[7], f[9], f[10], f[11])
+        }
+        return Snapshot(seen, labels.map { SeenText(it.s, it.x, it.y, it.h) })
+    }
+
+    internal val playPhase get() = phase
+    internal val playScore get() = score
+    internal val playBest get() = best
 
     private fun GlProgram.setCommonUniforms(frame: FrameState) {
         set2f("uResolution", width.toFloat(), height.toFloat())
