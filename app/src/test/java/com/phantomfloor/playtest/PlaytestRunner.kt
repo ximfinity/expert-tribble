@@ -30,7 +30,8 @@ internal data class SessionResult(
 
 /**
  * Plays [game] with [players] bots of [persona] for [seconds] of simulated time at 60 fps,
- * recording rounds, scores, sounds and on-floor text problems. Deterministic for a given seed.
+ * recording rounds, scores, sounds and on-floor text problems. Bot moves are seeded, but each game
+ * seeds its own rng from System.nanoTime(), so numbers vary a little between runs.
  */
 internal fun playSession(game: GameScene, persona: Persona, players: Int, seconds: Float, seed: Int = 7, aspect: Float = 16f / 9f): SessionResult {
     val sounds = HashMap<Sfx, Int>()

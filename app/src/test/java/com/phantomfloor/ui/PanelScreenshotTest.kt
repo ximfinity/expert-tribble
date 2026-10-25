@@ -64,16 +64,32 @@ class PanelScreenshotTest {
     }
 
     private companion object {
-        const val ROWS_PER_PART = 9
+        const val ROWS_PER_PART = 6
     }
 
     @Test fun gameScene() = paparazzi.snapshot(panel("game_bomb"), "panel_game_bomb")
 
-    @Test fun networkCamera() = paparazzi.snapshot(
-        panel("swarm") {
+    /** Scrolled to the Interaction section (rows above it hidden) so the RTSP field is in view. */
+    @Test fun networkCamera() {
+        val binding = bind("swarm") {
             networkCameraChip.isChecked = true
             rtspGroup.visibility = View.VISIBLE
-        },
-        "panel_network_camera",
-    )
+        }
+        val content = (binding.controlPanel as ViewGroup).getChildAt(0) as ViewGroup
+        val first = content.indexOfChild(binding.trackingSwitch) - 1
+        for (k in 0 until first) content.getChildAt(k).visibility = View.GONE
+        paparazzi.snapshot(binding.root, "panel_network_camera")
+    }
+
+    /** A game's own settings (scrolled so the scene chips and sliders are in view). */
+    private fun gameParams(sceneId: String, name: String) {
+        val binding = bind(sceneId)
+        val content = (binding.controlPanel as ViewGroup).getChildAt(0) as ViewGroup
+        for (k in 0 until content.indexOfChild(binding.sceneGroup)) content.getChildAt(k).visibility = View.GONE
+        paparazzi.snapshot(binding.root, name)
+    }
+
+    @Test fun ticTacToeParams() = gameParams("game_ttt", "panel_game_ttt")
+
+    @Test fun coloringParams() = gameParams("game_coloring", "panel_game_coloring")
 }
