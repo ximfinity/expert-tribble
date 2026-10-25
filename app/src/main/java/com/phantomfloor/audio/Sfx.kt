@@ -6,7 +6,10 @@ import kotlin.random.Random
 enum class Sfx(val loud: Boolean = false) {
     WHOOSH, SKITTER, SQUISH, SPLASH(loud = true), DRIP, BUBBLE, GROWL, BOOM(loud = true), CRACKLE,
     CRUNCH, RUSTLE, CHIME, POP, BONK, BEEP, BUZZ, TICK, EXPLOSION(loud = true), FANFARE(loud = true),
-    SIZZLE, CLICK, CHIRP, TONE_1, TONE_2, TONE_3, TONE_4;
+    SIZZLE, CLICK, CHIRP, TONE_1, TONE_2, TONE_3, TONE_4,
+
+    // Scary section
+    SCREAM(loud = true), STINGER(loud = true), HEARTBEAT, WHISPER, SNAP(loud = true), GROAN, RUMBLE;
 
     internal fun voices(gain: Float, pan: Float, rng: Random): List<Voice> {
         val seed = rng.nextInt()
@@ -69,6 +72,36 @@ enum class Sfx(val loud: Boolean = false) {
             CHIRP -> listOf(
                 ToneVoice(2200f, 3600f, 0.06f, 0.003f, Wave.SINE, gain * 0.15f, pan),
                 ToneVoice(2400f, 3800f, 0.06f, 0.003f, Wave.SINE, gain * 0.12f, pan, ms(0.09f)),
+            )
+            SCREAM -> listOf(
+                ScreamVoice(1.7f, 1f, gain * 1.1f, pan, seed),
+                ScreamVoice(1.5f, 1.19f, gain * 0.7f, -pan * 0.5f, seed + 1, ms(0.05f)),
+                NoiseVoice(0.25f, 0.002f, 6000f, 1500f, gain * 0.35f, pan, seed = seed + 2),
+            )
+            // A dissonant orchestral "hit": clashing saws, a sub boom, and a burst of noise.
+            STINGER -> listOf(233f, 247f, 330f, 349f, 466f).map {
+                ToneVoice(it, it * 0.97f, 1.6f, 0.004f, Wave.SAW, gain * 0.16f, pan)
+            } + listOf(
+                ToneVoice(55f, 30f, 1.2f, 0.003f, Wave.SINE, gain * 0.8f, pan),
+                NoiseVoice(0.5f, 0.002f, 8000f, 600f, gain * 0.45f, pan, seed = seed),
+            )
+            HEARTBEAT -> listOf(
+                ToneVoice(62f, 38f, 0.2f, 0.004f, Wave.SINE, gain * 0.9f, pan),
+                ToneVoice(58f, 36f, 0.18f, 0.004f, Wave.SINE, gain * 0.65f, pan, ms(0.26f)),
+            )
+            WHISPER -> listOf(WhisperVoice(1.1f + rng.nextFloat() * 0.8f, gain * 0.35f, pan, seed))
+            SNAP -> listOf(
+                NoiseVoice(0.09f, 0.001f, 7000f, 2500f, gain * 0.8f, pan, seed = seed),
+                CrackleVoice(0.25f, 900f, 7000f, gain * 0.9f, pan, seed + 1),
+                ToneVoice(110f, 40f, 0.3f, 0.002f, Wave.SINE, gain * 0.8f, pan),
+            )
+            GROAN -> listOf(
+                GrowlVoice(2.2f, gain * 0.7f, pan),
+                ToneVoice(78f, 52f, 2f, 0.4f, Wave.SAW, gain * 0.2f, pan),
+            )
+            RUMBLE -> listOf(
+                NoiseVoice(1.8f, 0.25f, 260f, 70f, gain * 2.2f, pan, seed = seed),
+                CrackleVoice(1.6f, 25f, 1500f, gain * 1.2f, pan, seed + 1),
             )
             TONE_1 -> simon(330f, gain, pan)
             TONE_2 -> simon(392f, gain, pan)

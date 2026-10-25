@@ -3,6 +3,7 @@ package com.phantomfloor.scenes
 /** Groups scenes in the control panel. */
 enum class Season(val label: String) {
     HALLOWEEN("Halloween"),
+    SCARY("Scary"),
     WINTER("Winter"),
     FALL("Fall"),
     SPRING("Spring"),
