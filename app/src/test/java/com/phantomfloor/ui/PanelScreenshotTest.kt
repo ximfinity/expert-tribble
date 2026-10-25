@@ -63,6 +63,20 @@ class PanelScreenshotTest {
         }
     }
 
+    /** The About & help sheet's content, top and bottom halves. */
+    @Test fun aboutPage() {
+        val b = com.phantomfloor.databinding.DialogAboutBinding.inflate(LayoutInflater.from(paparazzi.context))
+        b.aboutVersion.text = "Version 1.3.0 · build 3"
+        b.aboutUpdate.text = "You have the latest version ✓"
+        b.root.setBackgroundColor(0xFF1E1E24.toInt())
+        paparazzi.snapshot(b.root, "about_top")
+        b.root.post { b.root.scrollTo(0, 100_000) }
+        (b.root as android.widget.ScrollView).getChildAt(0).let { content ->
+            for (k in 0 until 7) (content as ViewGroup).getChildAt(k).visibility = View.GONE
+        }
+        paparazzi.snapshot(b.root, "about_bottom")
+    }
+
     private companion object {
         const val ROWS_PER_PART = 6
     }
