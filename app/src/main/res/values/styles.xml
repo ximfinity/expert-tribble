@@ -9,4 +9,12 @@
         <item name="android:textAllCaps">true</item>
         <item name="android:letterSpacing">0.12</item>
     </style>
+
+    <style name="AboutBody">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">#E6FFFFFF</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:lineSpacingMultiplier">1.15</item>
+    </style>
 </resources>

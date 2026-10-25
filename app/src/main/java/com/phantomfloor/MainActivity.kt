@@ -32,6 +32,7 @@ import com.phantomfloor.engine.PhantomRenderer
 import com.phantomfloor.engine.TouchPeople
 import com.phantomfloor.scenes.Scene
 import com.phantomfloor.scenes.SceneParam
+import com.phantomfloor.ui.AboutDialog
 import com.phantomfloor.ui.CastController
 import com.phantomfloor.ui.ControlPanel
 import com.phantomfloor.ui.ProjectorPresentation
@@ -73,6 +74,7 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
     private lateinit var calibrator: FloorCalibrator
 
     private var trackingEnabled = false
+    private var updateStatus: UpdateChecker.Status = UpdateChecker.Status.Checking
     private var trackingRunning = false
 
     private lateinit var cast: CastController
@@ -147,7 +149,9 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
         }
 
         lifecycleScope.launch {
-            val update = UpdateChecker(BuildConfig.UPDATE_REPO, BuildConfig.VERSION_NAME).check() ?: return@launch
+            val status = UpdateChecker(BuildConfig.UPDATE_REPO, BuildConfig.VERSION_NAME).status()
+            updateStatus = status
+            val update = (status as? UpdateChecker.Status.Available)?.update ?: return@launch
             binding.updateButton.text = getString(R.string.update_available, update.version)
             binding.updateButton.visibility = View.VISIBLE
             binding.updateButton.setOnClickListener { openUrl(update.url) }
@@ -318,7 +322,9 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
         closeButton.setOnClickListener { panel.hide() }
         castButton.setOnClickListener { onCastClicked() }
         supportButton.setOnClickListener { openUrl(BuildConfig.SUPPORT_URL) }
+        aboutButton.setOnClickListener { showAbout() }
         versionText.text = getString(R.string.version_label, BuildConfig.VERSION_NAME)
+        versionText.setOnClickListener { showAbout() }
         doneButton.setOnClickListener { exitKeystoneEdit() }
     }
 
@@ -449,6 +455,27 @@ class MainActivity : AppCompatActivity(), ControlPanel.Callbacks {
             toast(getString(R.string.calibration_failed, message))
         }
         panel.show()
+    }
+
+    // --- About ----------------------------------------------------------------------------------
+
+    private fun showAbout() = AboutDialog.show(this, updateStatus, diagnostics(), ::openUrl)
+
+    /** Shared in problem reports; nothing personal (the RTSP URL is reduced to its host). */
+    private fun diagnostics(): String {
+        val cameraSource = if (prefs.networkCamera) {
+            "network (${Uri.parse(prefs.rtspUrl).host ?: "?"}), ${rtsp.state}"
+        } else {
+            "phone"
+        }
+        return listOf(
+            "PhantomFloor ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+            "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}), ${Build.MANUFACTURER} ${Build.MODEL}",
+            "Scene: ${prefs.sceneId}",
+            "Tracking: ${if (trackingRunning) "on" else "off"}, camera $cameraSource, ${if (mapping.isCalibrated) "calibrated" else "uncalibrated"}",
+            "Projecting to: ${presentation?.display?.name ?: "this screen"}",
+            String.format(Locale.US, "Rendering: %.0f fps%s", renderer.fps, renderer.lastError?.let { ", last error: $it" } ?: ""),
+        ).joinToString("\n")
     }
 
     // --- Audio ----------------------------------------------------------------------------------
