@@ -55,6 +55,20 @@ abstract class GameScene(id: String, title: String) : Scene(id, title, Season.GA
     private var overMessage = ""
     private var newBest = false
     private var lastCount = -1
+    /** Seconds since the scene started; unlike [phaseTime] it never resets. */
+    private var clock = 0f
+    private var pendingFanfare = -1f
+
+    // START: someone has to stand on it for a moment, and people already standing there when the
+    // title screen appears (left over from the last round) don't count until they step off.
+    private var startHold = 0f
+    private val startBlocked = HashSet<Int>()
+
+    // Juice: floating "+1"s and a bounce when the score changes.
+    private class Floater(val text: String, val x: Float, val y: Float, val r: Float, val g: Float, val b: Float, var age: Float = 0f)
+    private val floaters = ArrayList<Floater>()
+    private var shownScore = 0
+    private var scoreBounce = 0f
 
     // Rendering
     protected val shapes = SpriteBatch(3000)
@@ -64,9 +78,10 @@ abstract class GameScene(id: String, title: String) : Scene(id, title, Season.GA
     private class Label(val s: String, val x: Float, val y: Float, val h: Float, val r: Float, val g: Float, val b: Float, val a: Float)
     private val labels = ArrayList<Label>()
 
-    // Step detection: which (person, target) pairs were inside last frame.
-    private var inside = HashSet<Long>()
-    private var insideNow = HashSet<Long>()
+    // Step detection: when each (person, target) pair was last seen inside. A step counts only
+    // after the pair has been apart for [STEP_GAP], so a tracking frame the camera drops while
+    // someone stands still isn't mistaken for a new step.
+    private val lastSeen = HashMap<Long, Float>()
 
     // Confetti
     private class Bit(var x: Float, var y: Float, var vx: Float, var vy: Float, var age: Float, val r: Float, val g: Float, val b: Float, var spin: Float)
@@ -99,8 +114,8 @@ abstract class GameScene(id: String, title: String) : Scene(id, title, Season.GA
         newBest = score > best
         if (newBest) best = score
         setPhase(Phase.OVER)
-        frame.sound.play(if (newBest) Sfx.FANFARE else Sfx.BEEP, 0.8f)
-        if (newBest) confetti(aspect / 2f, 0.5f, 120)
+        // The game's own sound (a buzz, an explosion) plays now; the celebration follows it.
+        if (newBest) pendingFanfare = 0.6f else frame.sound.play(Sfx.BEEP, 0.8f)
     }
 
     // --- Helpers --------------------------------------------------------------------------------
@@ -111,11 +126,16 @@ abstract class GameScene(id: String, title: String) : Scene(id, title, Season.GA
         for (p in frame.people) {
             if (hypot(p.x * aspect - x, p.y - y) < radius) {
                 val key = p.id.toLong() * 100_000L + target
-                insideNow.add(key)
-                if (key !in inside && hit == null) hit = p
+                val last = lastSeen.put(key, clock)
+                if ((last == null || clock - last > STEP_GAP) && hit == null) hit = p
             }
         }
         return hit
+    }
+
+    /** Floating text that rises and fades, e.g. "+1" where something was hit. */
+    protected fun floater(text: String, x: Float, y: Float, r: Float = 1f, g: Float = 1f, b: Float = 1f) {
+        floaters += Floater(text, x, y, r, g, b)
     }
 
     /** People currently standing within the circle. */
@@ -144,6 +164,11 @@ abstract class GameScene(id: String, title: String) : Scene(id, title, Season.GA
         phase = p
         phaseTime = 0f
         lastCount = -1
+        if (p == Phase.ATTRACT) {
+            startHold = 0f
+            startBlocked.clear()
+            if (::frame.isInitialized) for (o in occupants(aspect / 2f, START_Y, START_R)) startBlocked += o.id
+        }
     }
 
     // --- Scene plumbing -------------------------------------------------------------------------
@@ -153,7 +178,7 @@ abstract class GameScene(id: String, title: String) : Scene(id, title, Season.GA
         aspect = frame.aspect
         val dt = frame.dt
         phaseTime += dt
-        insideNow = HashSet()
+        clock += dt
 
         if (freePlay && phase != Phase.PLAYING) {
             startRound()
@@ -161,8 +186,18 @@ abstract class GameScene(id: String, title: String) : Scene(id, title, Season.GA
         }
         when (phase) {
             Phase.ATTRACT -> {
-                if (stepped(START_ID, aspect / 2f, START_Y, START_R) != null) {
+                val onStart = occupants(aspect / 2f, START_Y, START_R)
+                startBlocked.retainAll(onStart.map { it.id }.toSet())
+                val starter = onStart.any { it.id !in startBlocked }
+                val before = startHold
+                startHold = if (starter) startHold + dt else (startHold - dt * 2f).coerceAtLeast(0f)
+                if (starter && before == 0f) frame.sound.play(Sfx.CLICK, 0.5f)
+                if (startHold >= START_HOLD) {
                     frame.sound.play(Sfx.CLICK)
+                    // The new round is set up now, so the countdown shows the fresh field.
+                    score = 0
+                    shownScore = 0
+                    startRound()
                     setPhase(Phase.COUNTDOWN)
                 }
             }
@@ -170,8 +205,6 @@ abstract class GameScene(id: String, title: String) : Scene(id, title, Season.GA
                 val n = 3 - phaseTime.toInt()
                 if (n != lastCount && n > 0) { frame.sound.play(Sfx.BEEP, 0.7f); lastCount = n }
                 if (phaseTime >= 3f) {
-                    score = 0
-                    startRound()
                     setPhase(Phase.PLAYING)
                     frame.sound.play(Sfx.TONE_4, 0.8f)
                 }
@@ -188,6 +221,22 @@ abstract class GameScene(id: String, title: String) : Scene(id, title, Season.GA
             Phase.OVER -> if (phaseTime > 7f) setPhase(Phase.ATTRACT)
         }
 
+        if (pendingFanfare >= 0f) {
+            pendingFanfare -= dt
+            if (pendingFanfare < 0f) {
+                frame.sound.play(Sfx.FANFARE, 0.8f)
+                confetti(aspect / 2f, 0.5f, 120)
+            }
+        }
+        if (score != shownScore) {
+            if (score > shownScore && phase == Phase.PLAYING) scoreBounce = 1f
+            shownScore = score
+        }
+        scoreBounce = (scoreBounce - dt * 4f).coerceAtLeast(0f)
+        for (f in floaters) f.age += dt
+        floaters.removeAll { it.age > FLOAT_LIFE }
+        lastSeen.values.removeAll { clock - it > 1f }
+
         for (c in confettiBits) {
             c.age += dt
             c.vx *= 0.97f; c.vy *= 0.97f
@@ -195,7 +244,6 @@ abstract class GameScene(id: String, title: String) : Scene(id, title, Season.GA
             c.spin += dt * 8f
         }
         confettiBits.removeAll { it.age > 2.5f }
-        inside = insideNow
     }
 
     final override fun draw(frame: FrameState) {
@@ -229,35 +277,70 @@ abstract class GameScene(id: String, title: String) : Scene(id, title, Season.GA
                 howToPlay.split('\n').forEachIndexed { i, line -> label(line, mid, 0.64f - i * 0.065f, 0.045f, 0.85f, 0.85f, 0.9f) }
                 if (best > 0) label("Best: $best", mid, 0.37f, 0.045f, 1f, 0.85f, 0.3f)
                 val pulse = 0.5f + 0.5f * sin(frame.time * 4f)
+                val hold = (startHold / START_HOLD).coerceIn(0f, 1f)
                 shape(SHAPE_RING, mid, START_Y, START_R * (1f + pulse * 0.08f), accent[0], accent[1], accent[2], 1f, p1 = 0.12f)
-                shape(SHAPE_GLOW, mid, START_Y, START_R * 1.6f, accent[0], accent[1], accent[2], 0.5f + 0.3f * pulse)
-                label("START", mid, START_Y, 0.05f)
-                label("step here", mid, START_Y - START_R - 0.04f, 0.03f, 0.75f, 0.75f, 0.8f)
+                shape(SHAPE_GLOW, mid, START_Y, START_R * (1.6f + hold * 0.6f), accent[0], accent[1], accent[2], 0.5f + 0.3f * pulse + 0.3f * hold)
+                if (hold > 0f) shape(SHAPE_PROGRESS, mid, START_Y, START_R * 1.25f, 1f, 1f, 1f, 1f, p1 = hold)
+                label("START", mid, START_Y, 0.045f)
+                label(if (hold > 0f) "hold still…" else "stand here", mid, START_Y - START_R - 0.05f, 0.04f, 0.8f, 0.8f, 0.85f)
             }
             Phase.COUNTDOWN -> {
                 drawPlaying()
+                // Dim the new field so the number stands out; it brightens as play begins.
+                val dim = 0.6f * (1f - smooth((phaseTime - 2.6f) / 0.4f))
+                shapes.add(mid, 0.5f, 0f, 2f, 0f, 0f, 0f, dim, SHAPE_PAD.toFloat(), 0.1f, 0f, 0f)
                 val n = (3 - phaseTime.toInt()).coerceAtLeast(1)
-                val k = 1f - (phaseTime % 1f)
-                label("$n", mid, 0.5f, 0.25f * (0.8f + 0.4f * k), 1f, 1f, 1f, 0.4f + 0.6f * k)
+                val f = phaseTime % 1f
+                // Each number punches in large, settles with an ease-out, then fades.
+                val scale = 1f + 0.6f * (1f - easeOut(f / 0.35f))
+                val alpha = 1f - smooth((f - 0.7f) / 0.3f)
+                shape(SHAPE_RING, mid, 0.5f, 0.12f + 0.25f * easeOut(f), accent[0], accent[1], accent[2], (1f - f) * 0.8f, p1 = 0.05f)
+                label("$n", mid, 0.5f, 0.22f * scale, 1f, 1f, 1f, alpha)
             }
             Phase.PLAYING -> {
                 drawPlaying()
-                if (!freePlay) label(scoreText(), 0.3f, 0.95f, 0.045f, 1f, 1f, 1f)
+                if (phaseTime < GO_TIME && !freePlay) {
+                    val f = phaseTime / GO_TIME
+                    label("GO!", mid, 0.5f, 0.2f * (0.8f + 0.5f * easeOut(f)), accent[0], accent[1], accent[2], 1f - smooth((f - 0.5f) / 0.5f))
+                }
+                if (!freePlay) label(scoreText(), 0.3f, 0.95f, 0.045f * (1f + 0.3f * scoreBounce * scoreBounce), 1f, 1f, 1f)
                 roundSeconds?.let { label("${timeLeft.toInt().coerceAtLeast(0)}s", aspect - 0.18f, 0.95f, 0.045f, if (timeLeft < 5f) 1f else 0.85f, if (timeLeft < 5f) 0.35f else 0.85f, 0.4f) }
             }
             Phase.OVER -> {
                 drawPlaying()
-                shapes.add(mid, 0.5f, 0f, 2f, 0f, 0f, 0f, 0.55f, SHAPE_PAD.toFloat(), 0.1f, 0f, 0f)
-                label(overMessage, mid, 0.62f, 0.12f, accent[0], accent[1], accent[2])
-                label(scoreText(), mid, 0.47f, 0.07f)
-                if (newBest) label("NEW BEST!", mid, 0.36f, 0.055f, 1f, 0.85f, 0.25f)
+                // The results card fades in while the message drops into place and the score counts up.
+                val k = easeOut(phaseTime / 0.5f)
+                shapes.add(mid, 0.5f, 0f, 2f, 0f, 0f, 0f, 0.6f * k, SHAPE_PAD.toFloat(), 0.1f, 0f, 0f)
+                label(overMessage, mid, 0.62f + 0.08f * (1f - k), 0.12f * (0.7f + 0.3f * k), accent[0], accent[1], accent[2], k)
+                val shown = score * easeOut((phaseTime - 0.4f) / 1f)
+                withScore(shown.toInt()) { label(scoreText(), mid, 0.47f, 0.07f, 1f, 1f, 1f, k) }
+                if (newBest && phaseTime > 0.6f) {
+                    val b = easeOut((phaseTime - 0.6f) / 0.4f)
+                    label("NEW BEST!", mid, 0.36f, 0.055f * (1.4f - 0.4f * b), 1f, 0.85f, 0.25f, b)
+                }
             }
+        }
+        for (f in floaters) {
+            val t = f.age / FLOAT_LIFE
+            val pop = 1f + 0.5f * (1f - easeOut(t / 0.25f))
+            label(f.text, f.x, f.y + 0.1f * easeOut(t), 0.05f * pop, f.r, f.g, f.b, 1f - smooth((t - 0.5f) / 0.5f))
         }
         for (c in confettiBits) {
             val a = (1f - c.age / 2.5f).coerceIn(0f, 1f)
             shape(SHAPE_PAD, c.x, c.y, 0.008f, c.r, c.g, c.b, a, p1 = 0.2f, angle = c.spin)
         }
     }
+
+    /** Runs [block] with [score] temporarily set to [value], so [scoreText] can show a count-up. */
+    private inline fun withScore(value: Int, block: () -> Unit) {
+        val real = score
+        score = value
+        block()
+        score = real
+    }
+
+    private fun easeOut(x: Float): Float { val t = x.coerceIn(0f, 1f); return 1f - (1f - t) * (1f - t) * (1f - t) }
+    private fun smooth(x: Float): Float { val t = x.coerceIn(0f, 1f); return t * t * (3f - 2f * t) }
 
     // --- Headless play-testing (see app/src/test/.../playtest) ----------------------------------
 
@@ -279,6 +362,7 @@ abstract class GameScene(id: String, title: String) : Scene(id, title, Season.GA
     }
 
     internal val playPhase get() = phase
+    internal val playOverMessage get() = overMessage
     internal val playScore get() = score
     internal val playBest get() = best
 
@@ -303,9 +387,13 @@ abstract class GameScene(id: String, title: String) : Scene(id, title, Season.GA
         const val SHAPE_GLOW = 11
         const val SHAPE_LAVA = 12
 
-        private const val START_ID = 99_999
-        private const val START_Y = 0.18f
-        private const val START_R = 0.085f
+        private const val START_Y = 0.2f
+        private const val START_R = 0.09f
+        /** Seconds someone must stand on START: long enough that walking across it doesn't count. */
+        private const val START_HOLD = 0.7f
+        private const val STEP_GAP = 0.25f
+        private const val FLOAT_LIFE = 0.9f
+        private const val GO_TIME = 0.8f
 
         private val CONFETTI = arrayOf(
             floatArrayOf(1f, 0.3f, 0.3f), floatArrayOf(1f, 0.85f, 0.2f), floatArrayOf(0.3f, 0.6f, 1f),

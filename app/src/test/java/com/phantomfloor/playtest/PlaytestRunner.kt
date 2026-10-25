@@ -83,7 +83,7 @@ internal fun playSession(game: GameScene, persona: Persona, players: Int, second
                 }
                 if (phase == GameScene.Phase.OVER) {
                     // The large accent text on the results screen is the ending message.
-                    lastOverText = view.texts.firstOrNull { abs(it.y - 0.62f) < 0.01f }?.text ?: ""
+                    lastOverText = game.playOverMessage
                     rounds += Round(roundStart, t - roundStart, game.playScore, lastOverText)
                 }
                 lastPhase = phase

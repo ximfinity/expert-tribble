@@ -24,13 +24,20 @@ class SimonGame : GameScene("game_simon", "Simon Says") {
     private var modeTime = 0f
     private var entered = 0
     private val lit = FloatArray(4)
+    // Friends often follow each other onto the same pad; a repeat step on the pad just entered
+    // correctly is ignored for a moment instead of counting as a mistake.
+    private var lastPad = -1
+    private var lastPadAt = -10f
+    private var clock = 0f
 
     private fun px(i: Int) = aspect / 2f + if (i % 2 == 0) -0.2f else 0.2f
     private fun py(i: Int) = if (i < 2) 0.7f else 0.36f
 
-    override fun scoreText() = "Length $score"
+    override fun scoreText() = "Round ${score + 1}"
 
     override fun startRound() {
+        lit.fill(0f)
+        lastPad = -1
         seq.clear()
         seq += rng.nextInt(4)
         begin(Mode.SHOW)
@@ -40,6 +47,7 @@ class SimonGame : GameScene("game_simon", "Simon Says") {
 
     override fun updatePlaying(dt: Float) {
         modeTime += dt
+        clock += dt
         // Track pad presence every frame, so standing on a pad while the sequence plays
         // doesn't count as a step the moment input begins.
         val hits = Array(4) { stepped(it, px(it), py(it), 0.15f) }
@@ -61,6 +69,7 @@ class SimonGame : GameScene("game_simon", "Simon Says") {
                 if (modeTime > 7f) { endRound("TOO SLOW!"); return }
                 for (i in 0 until 4) {
                     val p = hits[i] ?: continue
+                    if (i != seq[entered] && i == lastPad && clock - lastPadAt < GROUP_GRACE) { lit[i] = maxOf(lit[i], 0.5f); continue }
                     lit[i] = 1f
                     modeTime = 0f
                     if (i != seq[entered]) {
@@ -69,9 +78,12 @@ class SimonGame : GameScene("game_simon", "Simon Says") {
                         return
                     }
                     frame.sound.play(tones[i], 0.8f, pan(p.x))
+                    lastPad = i
+                    lastPadAt = clock
                     entered++
                     if (entered == seq.size) {
                         score = seq.size
+                        floater("Nice!", px(i), py(i) + 0.12f, 1f, 0.95f, 0.6f)
                         begin(Mode.NEXT)
                         return
                     }
@@ -94,5 +106,9 @@ class SimonGame : GameScene("game_simon", "Simon Says") {
             Mode.NEXT -> "Nice!"
         }
         label(msg, aspect / 2f, 0.12f, 0.05f, 1f, 0.95f, 0.7f)
+    }
+
+    private companion object {
+        const val GROUP_GRACE = 1.5f
     }
 }

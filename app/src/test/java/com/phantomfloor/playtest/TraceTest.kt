@@ -68,19 +68,22 @@ class TraceTest {
 
     @Test
     fun lavaCamper() {
-        // One player stands still just off the right edge of the tile grid; one stands in the middle.
+        // One player stands still at the right edge of the floor; one stands in the middle.
         val out = StringBuilder()
         for ((name, x) in listOf("edge camper (x=1.70)" to 1.70f, "centre stander (x=0.89)" to 0.89f)) {
             val bot = FloorBot(1, PERSONAS[1], 1)
             var started = false
             var score = 0
-            run(FloorIsLavaGame(), listOf(bot), 66f) { _, v, _, _ ->
+            val game = FloorIsLavaGame()
+            var ending = ""
+            run(game, listOf(bot), 100f) { _, v, _, _ ->
                 val start = v.texts.firstOrNull { it.text == "START" }
                 if (!started) { if (start != null) { bot.x = start.x; bot.y = start.y } ; if (start == null) { started = true } }
                 else { bot.x = x; bot.y = 0.47f }
-                score = (v.texts.firstOrNull { it.text.startsWith("Safe") }?.text ?: "").let { score.coerceAtLeast(Regex("Safe (\\d+)").find(it)?.groupValues?.get(1)?.toInt() ?: 0) }
+                if (started && game.playPhase == GameScene.Phase.PLAYING) score = maxOf(score, game.playScore)
+                if (game.playPhase == GameScene.Phase.OVER && ending.isEmpty()) ending = game.playOverMessage
             }
-            out.append("$name: best Safe score seen = $score\n")
+            out.append("$name: survived ${score}s of a 90 s round; ending: ${ending.ifEmpty { "(none)" }}\n")
         }
         File("build/playtest").mkdirs(); File("build/playtest/lava_camper.txt").writeText(out.toString())
     }
