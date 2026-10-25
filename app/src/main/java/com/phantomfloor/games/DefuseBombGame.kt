@@ -3,6 +3,7 @@ package com.phantomfloor.games
 import com.phantomfloor.audio.Sfx
 import com.phantomfloor.scenes.SceneParam
 import java.util.Locale
+import kotlin.math.sin
 
 /**
  * DEFUSE THE BOMB: the bomb flashes a code on its four coloured wires. Step on the wires in the
@@ -32,6 +33,10 @@ class DefuseBombGame : GameScene("game_bomb", "Defuse the Bomb") {
     private var timerMax = 1f
     private var lastTick = 0f
     private val flash = FloatArray(4)
+    private var lastPad = -1
+    private var lastPadAt = -10f
+    private var clock = 0f
+    private var shake = 0f
 
     private fun px(i: Int) = aspect / 2f + if (i % 2 == 0) -0.45f else 0.45f
     private fun py(i: Int) = if (i < 2) 0.72f else 0.3f
@@ -41,6 +46,8 @@ class DefuseBombGame : GameScene("game_bomb", "Defuse the Bomb") {
 
     override fun startRound() {
         level = startLevel.int
+        flash.fill(0f)
+        shake = 0f
         newCode()
     }
 
@@ -48,12 +55,15 @@ class DefuseBombGame : GameScene("game_bomb", "Defuse the Bomb") {
         code.clear()
         repeat(level + 2) { code += rng.nextInt(4) }
         entered = 0
+        lastPad = -1
         mode = Mode.SHOW
         modeTime = 0f
     }
 
     override fun updatePlaying(dt: Float) {
         modeTime += dt
+        clock += dt
+        shake = (shake - dt * 2.5f).coerceAtLeast(0f)
         // Track pad presence every frame (see SimonGame) so only fresh steps count during input.
         val hits = Array(4) { stepped(it, px(it), py(it), 0.12f) }
         for (i in 0 until 4) flash[i] = (flash[i] - dt * 3f).coerceAtLeast(0f)
@@ -83,9 +93,13 @@ class DefuseBombGame : GameScene("game_bomb", "Defuse the Bomb") {
                 if (lastTick - timer >= interval) { frame.sound.play(Sfx.TICK, 0.7f); lastTick = timer }
                 for (i in 0 until 4) {
                     val p = hits[i] ?: continue
+                    // A friend stepping onto the wire that was just cut correctly isn't a mistake.
+                    if (i != code[entered] && i == lastPad && clock - lastPadAt < GROUP_GRACE) { flash[i] = maxOf(flash[i], 0.5f); continue }
                     flash[i] = 1f
                     if (i == code[entered]) {
                         frame.sound.play(tones[i], 0.8f, pan(p.x))
+                        lastPad = i
+                        lastPadAt = clock
                         entered++
                         if (entered == code.size) {
                             score = level
@@ -97,6 +111,8 @@ class DefuseBombGame : GameScene("game_bomb", "Defuse the Bomb") {
                     } else {
                         frame.sound.play(Sfx.BUZZ, 0.9f, pan(p.x))
                         timer -= 3f
+                        shake = 1f
+                        floater("−3 s", cx, 0.68f, 1f, 0.3f, 0.25f)
                     }
                 }
                 if (timer <= 0f && mode == Mode.INPUT) {
@@ -123,12 +139,16 @@ class DefuseBombGame : GameScene("game_bomb", "Defuse the Bomb") {
             shape(SHAPE_GLOW, cx, 0.52f, 0.9f * (1f - k * 0.5f), 1f, 0.55f, 0.1f, k)
             shape(SHAPE_SPLAT, cx, 0.52f, 0.3f, 0.25f, 0.2f, 0.18f, 0.9f, p1 = 0.3f)
         } else {
-            shape(SHAPE_BOMB, cx, 0.52f, 0.14f, 1f, 1f, 1f, 1f, p1 = urgency)
+            // The bomb trembles as time runs out and jolts on a wrong wire.
+            val jolt = sin(phaseTime * 70f) * (0.004f * urgency * urgency + 0.03f * shake * shake)
+            shape(SHAPE_BOMB, cx + jolt, 0.52f, 0.14f * (1f + 0.04f * shake), 1f, 1f, 1f, 1f, p1 = urgency, angle = jolt * 4f)
         }
         when (mode) {
             Mode.SHOW -> label("Watch the code...", cx, 0.12f, 0.05f, 1f, 0.9f, 0.6f)
             Mode.INPUT -> {
-                label(String.format(Locale.US, "%.1f", timer.coerceAtLeast(0f)), cx, 0.52f, 0.06f, 1f, 0.3f + 0.7f * (1f - urgency), 0.3f)
+                // A dark backing keeps the countdown readable on the red-hot bomb.
+                shape(SHAPE_DISC, cx, 0.52f, 0.065f, 0f, 0f, 0f, 0.75f)
+                label(String.format(Locale.US, "%.1f", timer.coerceAtLeast(0f)), cx, 0.52f, 0.065f, 1f, 1f - 0.6f * urgency, 1f - 0.75f * urgency)
                 label("Step ${entered + 1} of ${code.size}", cx, 0.12f, 0.045f)
             }
             Mode.DEFUSED -> label("DEFUSED!", cx, 0.12f, 0.07f, 0.4f, 1f, 0.5f)
@@ -139,5 +159,9 @@ class DefuseBombGame : GameScene("game_bomb", "Defuse the Bomb") {
     override fun drawAttractDecor() {
         shape(SHAPE_BOMB, aspect * 0.15f, 0.45f, 0.1f, 1f, 1f, 1f, 1f, p1 = 0.3f)
         shape(SHAPE_BOMB, aspect * 0.85f, 0.45f, 0.1f, 1f, 1f, 1f, 1f, p1 = 0.6f)
+    }
+
+    private companion object {
+        const val GROUP_GRACE = 1.5f
     }
 }

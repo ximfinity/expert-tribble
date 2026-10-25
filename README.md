@@ -98,6 +98,10 @@ releases, so uninstall one before installing the other.
 
 With **Touch acts as a person** turned on, fingers on the screen act as feet. This lets you test every scene without the camera.
 
+**About & help** (near the bottom of the panel) has these steps in short form, whether you're up to
+date, links to the itch.io page and GitHub, a **Report a problem** button that opens a GitHub issue
+pre-filled with diagnostics (long-press the header to copy them), the privacy note and credits.
+
 ## Casting
 
 **Cast to projector / TV** opens Android's screen-cast picker. When the phone connects to a wireless
@@ -114,6 +118,7 @@ casting, or an HDMI / USB-C adapter.
 | Season | Scenes |
 |---|---|
 | Halloween | Ectoplasmic Fog, Ground Smoke, The Swarm, Cursed Fluid, Living Water |
+| Scary | Jump Scare, Eyes in the Dark, Grasping Hands |
 | Winter | Snowfall, Christmas, Hanukkah |
 | Fall | Fall Leaves |
 | Spring | Spring Garden |
@@ -123,9 +128,12 @@ casting, or an HDMI / USB-C adapter.
 
 ## Floor games
 
-Every game starts the same way: **step on the glowing START pad**, a 3-2-1 countdown plays, and the
-round begins. The score and best score show on the floor, and the round ends with a results screen
-before the START pad comes back. Touch-as-a-person works here too, so you can try every game on the
+Every game starts the same way: **stand on the glowing START circle** until its ring fills (about
+0.7 s, so people just walking across don't start a game), a 3-2-1 countdown plays over the fresh
+board, and **GO!** The score and best score show on the floor, hits pop up as "+1", and the round
+ends with a results screen before the START circle comes back. A camera that briefly loses
+someone standing on a pad doesn't count it as a new step, and in Simon Says and Defuse the Bomb a
+friend following you onto the pad you just stepped on isn't a mistake. Touch-as-a-person works here too, so you can try every game on the
 phone screen.
 
 | Game | How to play |
@@ -136,8 +144,25 @@ phone screen.
 | **Tic-Tac-Toe** | Stand on a square for a moment to claim it. Two players take turns, or play against the computer (difficulty slider). |
 | **Simon Says** | Four coloured pads light up in a growing sequence. Repeat it with your feet. |
 | **Balloon Pop** | Balloons float across the floor. Pop them by stepping on them; gold ones are worth 5. |
-| **Floor is Lava** | Tiles flash, then turn to lava. Keep moving to safe tiles; you score for every second you stay safe. |
+| **Floor is Lava** | Tiles cover the whole floor; they flash, then turn to lava, faster as the round goes on. Everyone has 3 lives; standing on lava costs one. Survive as long as you can (90 s round). |
 | **Coloring** | Free play: step on a colour swatch, then walk to paint. Pick an outline (pumpkin, star, heart, house, fish) and hold **CLEAR** to start over. |
+
+## Scary
+
+Scenes for haunted houses and Halloween parties. **The floor stays completely black and silent
+until someone walks on**, so guests don't know anything is there.
+
+| ![jump scare](docs/previews/jumpscare.gif) | ![eyes](docs/previews/scare_eyes_maw.png) | ![hands](docs/previews/scare_hands.png) |
+|---|---|---|
+
+| Scene | What happens |
+|---|---|
+| **Jump Scare** | A heartbeat thuds, then a screaming ghoul or skull lunges up out of the floor right in front of the person, with a flash and a stinger. It holds for a second and burns away. Each person gets one scare until the floor has been empty for a few seconds, so a crowd doesn't get a strobe of screams. Settings: the wait before the scare, rest between scares, monster (ghoul, skull, random), size, flash brightness, scream volume, heartbeat. |
+| **Eyes in the Dark** | Glowing eyes blink open in the darkness around anyone on the floor and watch them, whispering. Moving fast makes them snap shut and hide. Stand still and more gather and creep closer, until a ring of teeth opens under your feet and snaps shut. |
+| **Grasping Hands** | Where someone stops, the floor rumbles and splits open with glowing cracks, and rotting hands claw up out of them toward their feet. Walk away and they sink back into the dark. |
+
+The scares are loud and bright on purpose. Turn down **Scream volume** / **Scare volume** and
+**Flash brightness** for younger guests, and warn anyone sensitive to flashing light.
 
 ## Sound effects
 
@@ -259,6 +284,7 @@ previews. This catches GLSL errors without a device.
 ## Known limitations
 
 - ML Kit pose detection tracks one person (two feet). Use **Bodies** mode for groups.
+- The scary scenes react to the first frame someone is detected. With the phone camera, tracking needs some light, so in a pitch-black haunted-house room use an IR network camera.
 - Tracking needs some light on people. The projection itself lights them, but a pitch-black room limits it. Use a [network IR camera](#network--ir-camera-wyze-rtsp) for dark rooms.
 - A network camera adds its stream delay (typically 0.3–1 s) to tracking. Use the camera's sub stream and a wired or 5 GHz connection to keep it low.
 - Calibration assumes the camera stays still afterwards. Re-run it if the camera moves.

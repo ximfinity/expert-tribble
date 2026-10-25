@@ -2,6 +2,8 @@ package com.phantomfloor.games
 
 import com.phantomfloor.audio.Sfx
 import com.phantomfloor.scenes.SceneParam
+import kotlin.math.cos
+import kotlin.math.sin
 
 /** WHACK-A-MOLE: moles pop out of nine holes; step on them before they duck back down. */
 class WhackAMoleGame : GameScene("game_moles", "Whack-a-Mole") {
@@ -14,6 +16,8 @@ class WhackAMoleGame : GameScene("game_moles", "Whack-a-Mole") {
 
     private val up = FloatArray(9)       // seconds left above ground
     private val rise = FloatArray(9)     // animation 0..1
+    private val riseVel = FloatArray(9)
+    private val dust = FloatArray(9)
     private val stunned = FloatArray(9)
     private var popTimer = 0f
 
@@ -23,7 +27,7 @@ class WhackAMoleGame : GameScene("game_moles", "Whack-a-Mole") {
     override fun scoreText() = "Whacked: $score"
 
     override fun startRound() {
-        up.fill(0f); rise.fill(0f); stunned.fill(0f)
+        up.fill(0f); rise.fill(0f); stunned.fill(0f); riseVel.fill(0f); dust.fill(0f)
         popTimer = 0.5f
     }
 
@@ -39,18 +43,34 @@ class WhackAMoleGame : GameScene("game_moles", "Whack-a-Mole") {
             if (up[i] > 0f) up[i] -= dt
             if (stunned[i] > 0f) stunned[i] -= dt
             val target = if (up[i] > 0f || stunned[i] > 0f) 1f else 0f
-            rise[i] += (target - rise[i]) * (dt * 12f).coerceAtMost(1f)
+            // A springy pop-up: moles overshoot a little and settle, rather than sliding.
+            riseVel[i] += ((target - rise[i]) * 260f - riseVel[i] * 18f) * dt
+            rise[i] = (rise[i] + riseVel[i] * dt).coerceIn(0f, 1.15f)
+            dust[i] = (dust[i] - dt * 3f).coerceAtLeast(0f)
             val hit = stepped(i, hx(i), hy(i), 0.11f)
             if (hit != null && up[i] > 0f && rise[i] > 0.5f && stunned[i] <= 0f) {
                 score++
                 up[i] = 0f
                 stunned[i] = 0.6f
+                dust[i] = 1f
+                floater("+1", hx(i), hy(i) + 0.1f, 1f, 0.9f, 0.4f)
                 frame.sound.play(Sfx.BONK, 1f, pan(hit.x))
             }
         }
     }
 
     override fun drawPlaying() {
-        for (i in 0 until 9) shape(SHAPE_MOLE, hx(i), hy(i), 0.12f, 1f, 1f, 1f, 1f, p1 = rise[i], p2 = if (stunned[i] > 0f) 1f else 0f)
+        for (i in 0 until 9) {
+            // A whacked mole squashes flat for a moment.
+            val squash = if (stunned[i] > 0.45f) 0.85f else 1f
+            shape(SHAPE_MOLE, hx(i), hy(i), 0.12f * squash, 1f, 1f, 1f, 1f, p1 = rise[i].coerceAtMost(1f), p2 = if (stunned[i] > 0f) 1f else 0f)
+            if (dust[i] > 0f) {
+                val k = 1f - dust[i]
+                for (j in 0 until 6) {
+                    val a = j * 1.047f + i
+                    shape(SHAPE_DISC, hx(i) + cos(a) * (0.06f + 0.08f * k), hy(i) - 0.02f + sin(a) * (0.03f + 0.04f * k), 0.012f * (1f - k * 0.5f), 0.75f, 0.65f, 0.5f, dust[i] * 0.8f)
+                }
+            }
+        }
     }
 }

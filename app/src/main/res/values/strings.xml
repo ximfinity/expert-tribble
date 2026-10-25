@@ -38,4 +38,23 @@
     <string name="cast_pad_hint">Projecting to %1$s\n\nTouch here to walk on the floor.\nTap to show or hide the controls.</string>
     <string name="cast_help">Pick your TV or projector in the cast menu, then come back. If it isn\'t listed, connect by HDMI or turn on the TV\'s screen mirroring.</string>
     <string name="sound_effects">Sound effects</string>
+    <string name="about">About &amp; help</string>
+    <string name="about_version">Version %1$s · build %2$d</string>
+    <string name="about_update_checking">Checking for updates…</string>
+    <string name="about_up_to_date">You have the latest version ✓</string>
+    <string name="about_update_unknown">Couldn\'t check for updates (offline?)</string>
+    <string name="about_update_available">Version %1$s is available. Download</string>
+    <string name="about_help_title">Quick setup</string>
+    <string name="about_help">1. Aim the projector at the floor and press Cast to projector / TV (or plug in HDMI).\n2. Edit keystone: drag the 4 corners until the grid fits the floor.\n3. Point the phone camera (or a network camera) at the floor and press Calibrate camera to floor.\n4. Pick a scene. Tap the projection any time to open or hide these controls.\n\nNo camera? Turn on Touch acts as a person and walk with your finger.\nGames start when someone stands on the glowing START circle.</string>
+    <string name="about_links_title">Links</string>
+    <string name="about_itch">PhantomFloor on itch.io</string>
+    <string name="about_github">Source code and releases on GitHub</string>
+    <string name="about_report">Report a problem</string>
+    <string name="about_privacy_title">Privacy</string>
+    <string name="about_privacy">Camera and microphone frames are processed on this phone and never leave it. Nothing is recorded or uploaded. A network camera streams only over your own Wi-Fi, and the only internet request is a check on GitHub for a newer version.</string>
+    <string name="about_credits_title">Credits</string>
+    <string name="about_credits">Made by PixelCrunch. Every visual and sound is generated live on your phone, with no video or audio files.\n\nBuilt with Google ML Kit (pose and object detection), AndroidX CameraX and Media3, Material Components, and Kotlin coroutines, used under the Apache License 2.0.</string>
+    <string name="about_support_note">PhantomFloor is free. If it made your party, a small donation keeps new scenes and games coming.</string>
+    <string name="about_diagnostics_copied">Diagnostics copied</string>
+    <string name="about_close">Close</string>
 </resources>

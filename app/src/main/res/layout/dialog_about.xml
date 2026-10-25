@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingTop="20dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="8dp">
+
+        <LinearLayout
+            android:id="@+id/aboutHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_launcher" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/app_name"
+                    android:textColor="#7CFF9B"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/aboutVersion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#B3FFFFFF"
+                    android:textSize="14sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/aboutUpdate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="?attr/selectableItemBackground"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:textSize="15sp" />
+
+        <TextView
+            style="@style/PanelSection"
+            android:text="@string/about_help_title" />
+
+        <TextView
+            style="@style/AboutBody"
+            android:text="@string/about_help" />
+
+        <TextView
+            style="@style/PanelSection"
+            android:text="@string/about_links_title" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/aboutItch"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/about_itch" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/aboutGithub"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/about_github" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/aboutReport"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/about_report" />
+
+        <TextView
+            style="@style/PanelSection"
+            android:text="@string/about_privacy_title" />
+
+        <TextView
+            style="@style/AboutBody"
+            android:text="@string/about_privacy" />
+
+        <TextView
+            style="@style/PanelSection"
+            android:text="@string/about_credits_title" />
+
+        <TextView
+            style="@style/AboutBody"
+            android:text="@string/about_credits" />
+
+        <TextView
+            style="@style/AboutBody"
+            android:layout_marginTop="16dp"
+            android:text="@string/about_support_note" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/aboutSupport"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/support" />
+    </LinearLayout>
+</ScrollView>

@@ -45,7 +45,14 @@ class TicTacToeGame : GameScene("game_ttt", "Tic-Tac-Toe") {
             if (phaseTime >= finishAt) {
                 val w = winner()
                 score = xWins
-                endRound(when (w) { 1 -> "X WINS!"; 2 -> "O WINS!"; else -> "DRAW" })
+                val cpu = vsComputer.value > 0.5f
+                endRound(
+                    when (w) {
+                        1 -> if (cpu) "YOU WIN!" else "X WINS!"
+                        2 -> if (cpu) "COMPUTER WINS" else "O WINS!"
+                        else -> "DRAW"
+                    },
+                )
             }
             return
         }

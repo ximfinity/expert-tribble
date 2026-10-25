@@ -14,23 +14,33 @@ class UpdateChecker(private val repo: String, private val currentVersion: String
 
     data class Update(val version: String, val url: String)
 
-    suspend fun check(): Update? = withContext(Dispatchers.IO) {
-        if (repo.isBlank()) return@withContext null
+    /** What the About screen shows. */
+    sealed interface Status {
+        data object Checking : Status
+        data object UpToDate : Status
+        data object Unknown : Status
+        data class Available(val update: Update) : Status
+    }
+
+    suspend fun check(): Update? = (status() as? Status.Available)?.update
+
+    suspend fun status(): Status = withContext(Dispatchers.IO) {
+        if (repo.isBlank()) return@withContext Status.Unknown
         runCatching {
             val conn = URL("https://api.github.com/repos/$repo/releases/latest").openConnection() as HttpURLConnection
             conn.connectTimeout = 8000
             conn.readTimeout = 8000
             conn.setRequestProperty("Accept", "application/vnd.github+json")
             try {
-                if (conn.responseCode != 200) return@runCatching null
+                if (conn.responseCode != 200) return@runCatching Status.Unknown
                 val json = JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
                 val version = json.getString("tag_name").removePrefix("v")
                 val url = json.getString("html_url")
-                if (isNewer(version, currentVersion)) Update(version, url) else null
+                if (isNewer(version, currentVersion)) Status.Available(Update(version, url)) else Status.UpToDate
             } finally {
                 conn.disconnect()
             }
-        }.getOrNull()
+        }.getOrDefault(Status.Unknown)
     }
 
     companion object {

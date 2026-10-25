@@ -1,6 +1,8 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    // Renders the control panel to PNGs in JVM tests (layoutlib), for UI review without a device.
+    id("app.cash.paparazzi")
 }
 
 // Release CI passes -PappVersionName / -PappVersionCode from the git tag and run number.
@@ -73,6 +75,12 @@ android {
         jvmTarget = "17"
     }
 
+    testOptions {
+        // Android framework calls (Paint, GLES30) become no-ops in JVM tests, so game logic can be
+        // play-tested headlessly (see src/test/.../playtest).
+        unitTests.isReturnDefaultValues = true
+    }
+
     buildFeatures {
         viewBinding = true
         buildConfig = true
@@ -107,4 +115,9 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer-rtsp:$media3")
 
     testImplementation("junit:junit:4.13.2")
+}
+
+// Longer bot sessions: ./gradlew :app:testDebugUnitTest --tests '*PlaytestTest*' -PplaytestSeconds=600
+tasks.withType<Test>().configureEach {
+    (findProperty("playtestSeconds") as String?)?.let { systemProperty("playtest.seconds", it) }
 }

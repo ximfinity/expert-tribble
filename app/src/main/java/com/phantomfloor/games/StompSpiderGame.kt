@@ -54,6 +54,7 @@ class StompSpiderGame : GameScene("game_stomp", "Stomp the Spider") {
                 if (d < 0.05f) { // stomped
                     score++
                     splats += Splat(s.x, s.y, rng.nextFloat(), 0f)
+                    floater("+1", s.x, s.y + 0.06f, 0.6f, 1f, 0.4f)
                     frame.sound.play(Sfx.SQUISH, 0.9f, pan(s.x / aspect))
                     it.remove()
                     v = -1f
@@ -78,7 +79,8 @@ class StompSpiderGame : GameScene("game_stomp", "Stomp the Spider") {
     }
 
     override fun drawPlaying() {
-        for (s in splats) shape(SHAPE_SPLAT, s.x, s.y, 0.05f, 0.35f, 0.9f, 0.2f, (1f - s.age / 8f).coerceIn(0f, 1f) * 0.85f, p1 = s.seed)
+        // Splats squash in with a little overshoot.
+        for (s in splats) shape(SHAPE_SPLAT, s.x, s.y, 0.05f * (0.6f + 0.4f * minOf(1f, s.age / 0.12f) + 0.3f * sin(minOf(1f, s.age / 0.2f) * 3.1416f)), 0.35f, 0.9f, 0.2f, (1f - s.age / 8f).coerceIn(0f, 1f) * 0.85f, p1 = s.seed)
         for (s in spiders) shape(SHAPE_SPIDER, s.x, s.y, 0.04f, 0.78f, 0.72f, 0.9f, 1f, p1 = s.gait, angle = s.heading)
     }
 

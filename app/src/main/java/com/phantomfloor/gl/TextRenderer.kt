@@ -19,11 +19,14 @@ class TextRenderer {
 
     private lateinit var gl: GlResources
     private lateinit var program: GlProgram
-    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = 96f
-        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        color = Color.WHITE
-        setShadowLayer(10f, 0f, 0f, Color.BLACK)
+    // Created on first use, so games can be built (and play-tested on the JVM) without a Canvas.
+    private val paint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = 96f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            color = Color.WHITE
+            setShadowLayer(10f, 0f, 0f, Color.BLACK)
+        }
     }
     private val cache = object : LinkedHashMap<String, Entry>(64, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Entry>): Boolean {

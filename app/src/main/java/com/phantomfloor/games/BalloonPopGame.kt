@@ -45,9 +45,13 @@ class BalloonPopGame : GameScene("game_balloons", "Balloon Pop") {
             b.x += (b.vx + sin(phaseTime * 1.3f + b.phase) * 0.01f) * dt
             b.y += (b.vy + sin(phaseTime * 0.9f + b.phase * 2f) * 0.015f) * dt
             if (b.x < -0.1f || b.x > aspect + 0.1f) { it.remove(); continue }
-            val popper = frame.people.firstOrNull { hypot(it.x * aspect - b.x, it.y - b.y) < b.size * 0.9f }
+            // Popping takes a moving foot, so balloons don't pop by drifting into someone standing still.
+            val popper = frame.people.firstOrNull {
+                hypot(it.x * aspect - b.x, it.y - b.y) < b.size * 0.9f && hypot(it.vx * aspect, it.vy) > MIN_POP_SPEED
+            }
             if (popper != null) {
                 score += if (b.gold) 5 else 1
+                floater(if (b.gold) "+5" else "+1", b.x, b.y + 0.07f, b.color[0], b.color[1], b.color[2])
                 frame.sound.play(Sfx.POP, 1f, pan(b.x / aspect))
                 if (b.gold) frame.sound.play(Sfx.CHIME, 0.6f, pan(b.x / aspect))
                 confetti(b.x, b.y, if (b.gold) 40 else 14)
@@ -71,6 +75,9 @@ class BalloonPopGame : GameScene("game_balloons", "Balloon Pop") {
     }
 
     companion object {
+        /** World units per second: a deliberate step, not tracking jitter. */
+        private const val MIN_POP_SPEED = 0.12f
+
         private val COLORS = arrayOf(
             floatArrayOf(1f, 0.25f, 0.3f), floatArrayOf(0.3f, 0.6f, 1f), floatArrayOf(0.35f, 0.9f, 0.4f),
             floatArrayOf(0.8f, 0.4f, 1f), floatArrayOf(1f, 0.55f, 0.15f), floatArrayOf(1f, 0.45f, 0.8f),
