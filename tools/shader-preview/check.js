@@ -40,7 +40,7 @@ for (const f of files) src[f] = load(f);
       if (!gl.getProgramParameter(p, gl.LINK_STATUS)) errors.push(`link ${v}+${f}: ` + gl.getProgramInfoLog(p));
       progs[f] = p; return p;
     }
-    const pairs = [['fullscreen.vert','fog.frag'],['fullscreen.vert','swarm_floor.frag'],['spider.vert','spider.frag'],
+    const pairs = [['fullscreen.vert','fog.frag'],['fullscreen.vert','swarm_floor.frag'],['spider.vert','spider.frag'],['sprite.vert','web.frag'],
       ['fullscreen.vert','ripple_update.frag'],['fullscreen.vert','fluid.frag'],['fullscreen.vert','water_shapes.frag'],
       ['fullscreen.vert','water.frag'],['warp.vert','warp.frag'],['overlay.vert','overlay.frag']];
     for (const [v, f] of pairs) program(v, f);
@@ -115,38 +115,59 @@ for (const f of files) src[f] = load(f);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, shapes.tex); gl.uniform1i(u('uShapes'), 1);
     fsq(); snap('water');
 
-    // SWARM: floor + instanced spiders (shadow style), then spectral style
-    for (const [name, style] of [['swarm', 0], ['swarm_spectral', 1]]) {
+    // SWARM: floor + webs + instanced spiders, in each look the scene offers.
+    // opts: style, realism, radioactive, eyeGlow, shadow3d, sizeMix, webs, giant, closeup
+    function swarm(name, o) {
       screen();
-      p = progs['swarm_floor.frag']; gl.useProgram(p); common(2.0, people); f1('uLight', style === 0 ? 0.6 : 0.0); gl.uniform2f(u('uFlash'), 1.25, 0.55); f1('uFlashRadius', 0.2); f1('uFlashPower', 0.9); fsq();
-      const n = 120, data = new Float32Array(n * 6);
-      let seed = 1; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-      for (let i = 0; i < n; i++) data.set([0.1 + rnd() * (W2 - 0.2), 0.1 + rnd() * 0.8, rnd() * 6.28, 0.028 * (0.75 + rnd() * 0.5), rnd() * 6.28, rnd() < 0.2 ? 1 : 0], i * 6);
+      const flash = [1.25, 0.55];
+      p = progs['swarm_floor.frag']; gl.useProgram(p); common(2.0, o.closeup ? [] : people); f1('uLight', o.style ? 0.0 : (o.closeup ? 0.8 : 0.6)); gl.uniform2f(u('uFlash'), flash[0], flash[1]); f1('uFlashRadius', 0.2); f1('uFlashPower', 0.9); fsq();
+      gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+      if (o.webs) {
+        const wd = new Float32Array([0.45, 0.7, 1.0, 0.11, 0.9, 0.9, 0.95, 1, 1.0, 3.1, 0, 0,
+                                     1.3, 0.3, 2.0, 0.09, 1.3, 1.3, 1.4, 1, 0.6, 7.7, 0, 0,
+                                     0.9, 0.25, 0.5, 0.08, 0.9, 0.9, 0.95, 1, 1.0, 1.3, 0.45, 0]);
+        const wv = gl.createVertexArray(); gl.bindVertexArray(wv);
+        const wb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, wb); gl.bufferData(gl.ARRAY_BUFFER, wd, gl.STATIC_DRAW);
+        for (let a = 0; a < 3; a++) { gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 4, gl.FLOAT, false, 48, a * 16); gl.vertexAttribDivisor(a, 1); }
+        p = progs['web.frag']; gl.useProgram(p); f1('uAspect', W2); gl.uniform2f(u('uOffset'), 0, 0);
+        gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 3);
+      }
+      let data;
+      let n;
+      if (o.closeup) { data = new Float32Array([W2 / 2, 0.5, 0.4, 0.42, 1.0, 0.5, 0.02, 1.0]); n = 1; }
+      else {
+        n = 120; data = new Float32Array((n + 1) * 8);
+        let seed = 1; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+        for (let i = 0; i < n; i++) {
+          let sz = 0.75 + rnd() * 0.5;
+          if (o.sizeMix) { const h = rnd(); sz *= h < 0.55 ? 0.55 : h < 0.9 ? 1.2 : 2.6; }
+          data.set([0.1 + rnd() * (W2 - 0.2), 0.1 + rnd() * 0.8, rnd() * 6.28, 0.028 * sz, rnd() * 6.28, rnd() < 0.2 ? 1 : 0, 0.02, rnd() * 10], i * 8);
+        }
+        if (o.webs) { data.set([0.45, 0.7, 0.3, 0.03, 1.0, 0.0, 0.02, 2.0], 0); }
+        if (o.giant) { data.set([0.95, 0.5, 3.6, 0.2 * (1 + o.giant * 0.6), 2.0, 1.0, o.giant, 3.3], n * 8); n++; }
+      }
       const ivao = gl.createVertexArray(); gl.bindVertexArray(ivao);
       const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
-      gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 24, 0); gl.vertexAttribDivisor(0, 1);
-      gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 24, 16); gl.vertexAttribDivisor(1, 1);
-      gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+      gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 32, 0); gl.vertexAttribDivisor(0, 1);
+      gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 32, 16); gl.vertexAttribDivisor(1, 1);
       p = progs['spider.frag']; gl.useProgram(p);
-      f1('uAspect', W2); f1('uStyle', style); gl.uniform2f(u('uShadowOffset'), 0.25, -0.3);
-      if (style === 0) { f1('uShadowPass', 1); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n); }
-      f1('uShadowPass', 0); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n);
+      f1('uAspect', W2); f1('uStyle', o.style || 0); gl.uniform2f(u('uShadowOffset'), 0.25, -0.3); f1('uTime', 2.0);
+      f1('uShadow3D', o.shadow3d ? 1 : 0); gl.uniform2f(u('uLightPos'), o.closeup ? W2 / 2 - 0.3 : flash[0], o.closeup ? 0.75 : flash[1]); f1('uLightRadius', o.closeup ? 0.6 : 0.2); f1('uLightPower', 0.9);
+      f1('uLantern', o.style ? 0 : 0.6); f1('uEyeGlow', o.eyeGlow ?? 0.4); f1('uRadioactive', o.radioactive ? 1 : 0); f1('uRealism', o.realism ? 1 : 0);
+      f1('uGlowPass', 0); f1('uQuadScale', 1);
+      if (!o.style) { f1('uShadowPass', 1); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n); }
+      f1('uShadowPass', 0);
+      if (o.radioactive) { f1('uGlowPass', 1); f1('uQuadScale', 2.6); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n); f1('uGlowPass', 0); f1('uQuadScale', 1); }
+      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n);
       gl.disable(gl.BLEND); snap(name);
     }
-
-    // CLOSE-UP of one spider
-    screen();
-    { p = progs['swarm_floor.frag']; gl.useProgram(p); common(2.0, []); f1('uLight', 0.8); fsq();
-      const ivao = gl.createVertexArray(); gl.bindVertexArray(ivao);
-      const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([W2 / 2, 0.5, 0.4, 0.42, 1.0, 0.5]), gl.STATIC_DRAW);
-      gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 24, 0); gl.vertexAttribDivisor(0, 1);
-      gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 24, 16); gl.vertexAttribDivisor(1, 1);
-      gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-      p = progs['spider.frag']; gl.useProgram(p); f1('uAspect', W2); f1('uStyle', 0); gl.uniform2f(u('uShadowOffset'), 0.25, -0.3);
-      f1('uShadowPass', 1); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 1);
-      f1('uShadowPass', 0); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 1);
-      gl.disable(gl.BLEND); snap('spider_closeup'); }
+    swarm('swarm', { shadow3d: true, sizeMix: true });
+    swarm('swarm_spectral', { style: 1 });
+    swarm('spider_closeup', { closeup: true });
+    swarm('spider_realistic', { closeup: true, realism: true, shadow3d: true, eyeGlow: 0.8 });
+    swarm('swarm_realistic_webs', { realism: true, shadow3d: true, webs: true, sizeMix: true });
+    swarm('swarm_radioactive', { radioactive: true, eyeGlow: 1.0, shadow3d: true });
+    swarm('swarm_giant', { giant: 0.4, realism: true, shadow3d: true, eyeGlow: 1.0 });
 
     // WARP: fog canvas through a keystone quad with edit grid + handles, and a dissolve transition
     const fogT = target(W, H); gl.bindFramebuffer(gl.FRAMEBUFFER, fogT.fb); gl.viewport(0, 0, W, H);
