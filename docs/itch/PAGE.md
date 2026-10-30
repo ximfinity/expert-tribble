@@ -1,16 +1,16 @@
-# Build the itch.io page (about 10 minutes)
+# Update the itch.io page for 1.4.0 (about 10 minutes)
 
 Page: https://ximfinity.itch.io/phantom-floor-interactive-projector-floor-app
 
-itch.io has no API for page content, so this is done in the browser. Everything you need is in
-this folder:
+itch.io has no API for page content, so this is done in the browser. The APK itself is uploaded
+automatically by the Release workflow. Everything else you need is in this folder:
 
 | File | What it's for |
 |---|---|
 | `cover.png` | Cover image (630 × 500): shown in search, browse and on the page |
 | `banner.png` | Header banner (960 × 240) |
-| `gifs/*.gif` | **Animated** clips of the real scenes reacting to a walker, each under 3 MB |
-| `features/*.jpg` | 1280 × 720 stills with headlines |
+| `gifs/*.gif` | **Animated** clips: scenes reacting to a walker, the jump scare, the shadow puppets |
+| `features/*.jpg` | 1280 × 720 stills with headlines (13–20 are new in 1.2–1.4) |
 | `how-it-works.png` | 4-step setup graphic |
 | `screenshots/*.jpg` | Plain 1280 × 720 stills (backup) |
 
@@ -21,26 +21,26 @@ this folder:
 | Field | Value |
 |---|---|
 | Title | `PhantomFloor: Interactive Projector Floor` |
-| Short description or tagline | `Turn any floor into a living projection: fog that parts at your feet, spiders that scatter, snow that keeps your footprints.` |
+| Short description or tagline | `Turn any floor into a living projection: fog that parts at your feet, spiders that scatter, shadows that follow you, jump scares and stomp-to-play games.` |
 | Classification | **Tools** |
 | Kind of project | **Downloadable** |
 | Release status | **Released** |
 
 ## Step 2: Pricing
 
-- Choose **$0 or donate**. Set the suggested donation to **$3.00**.
-- Turn on **"Ask for a donation after download"** if it's offered.
+Keep **$0 or donate** with a suggested donation of **$3.00**, and **"Ask for a donation after
+download"** on.
 
 ## Step 3: Uploads
 
-The Release workflow already uploaded `PhantomFloor-1.1.0.apk`. On that file, tick **Android**.
-Leave "This file will be played in the browser" off.
+Once the 1.4.0 release finishes, the Release workflow has already uploaded `PhantomFloor-1.4.0.apk`
+to the `android` channel, replacing 1.3.0. Check it's ticked **Android**. Nothing else to upload.
 
 ## Step 4: Description
 
-Paste the text between the lines below into the **Description** box. Wherever you see
-`[IMAGE: …]`, delete that line and use the editor's **image** button to upload that file there.
-GIFs keep animating once they're inserted.
+Select all of the old description and replace it with the text between the lines below. Wherever
+you see `[IMAGE: …]`, delete that line and use the editor's **image** button to upload that file
+there. GIFs keep animating once they're inserted.
 
 ---
 
@@ -50,55 +50,74 @@ GIFs keep animating once they're inserted.
 
 PhantomFloor runs on an Android phone connected to a projector pointed at the floor. Everything it
 shows reacts to the people walking on it: fog parts around their feet, spiders scatter from their
-shoes, snow keeps their footprints, and flowers grow where they walk.
+shoes, shadows of witches and zombies come for them, and monsters lunge out of the dark.
 
-Nothing is a video loop. Every frame is generated live on your phone's GPU, so it never repeats and
-always responds.
+Nothing is a video loop. Every frame, and every sound, is generated live on your phone, so it never
+repeats and always responds.
 
 ## 🎃 Halloween
 
 [IMAGE: gifs/swarm.gif]
 
-- **The Swarm**: hundreds of spiders that flee from feet, spread panic through the swarm, and scurry out of a sweeping flashlight beam.
-- **Ectoplasmic Fog**: thick, swirling green-and-purple fog that clears around feet and curls in people's wake.
-- **Ground Smoke**: a real fluid simulation of fog-machine smoke that pours in and flows around legs.
-- **Cursed Fluid**: a bubbling pool of blood or lava that creeps toward guests.
-- **Living Water**: dark water that rises into tentacles, grasping hands and screaming faces.
+- **The Swarm**: hundreds of spiders that flee from feet and scurry out of a sweeping flashlight.
+  - *New:* realistic hairy spiders, radioactive glowing ones, a mix of tiny to huge, glowing eyes,
+    3D shadows cast by the flashlight, and spiders that stop to **spin webs** (walk through one to
+    tear it).
+  - *New:* a **giant jump-scare spider** that drops right in front of someone.
+- **Shadow Puppets** *(new)*: candle-lit floor, and the shadows of witches, ghosts, zombies and long
+  clawed hands wander across it, then come for whoever walks on.
+- **Ectoplasmic Fog**, **Ground Smoke** (glowing footprints, stir it to change its colour),
+  **Cursed Fluid** and **Living Water** (tentacles, grasping hands and screaming faces rise out of it).
 
-[IMAGE: gifs/water.gif]
+[IMAGE: gifs/puppets.gif]
 
-## ❄️ Winter
+[IMAGE: features/17-spider_webs.jpg]
+
+## 💀 Scary *(new)*
+
+The floor stays **completely black and silent until someone walks on.** Then:
+
+[IMAGE: gifs/jumpscare.gif]
+
+- **Jump Scare**: a heartbeat, then a screaming ghoul or skull lunges up out of the floor in front of
+  them with a flash.
+- **Eyes in the Dark**: glowing eyes open and watch, whispering. Stand still too long and a ring of
+  teeth snaps shut under your feet.
+- **Grasping Hands**: the floor cracks open where you stop and rotting hands claw at your feet.
+
+Volume and flash brightness are adjustable for younger guests.
+
+[IMAGE: features/15-hands.jpg]
+
+## 🎮 Floor games
+
+[IMAGE: features/20-games.jpg]
+
+Stand on START and play with your feet: **Stomp the Spider, Whack-a-Mole, Defuse the Bomb,
+Tic-Tac-Toe, Simon Says, Balloon Pop, The Floor is Lava** and free-play **Coloring**. Scores, best
+scores, countdowns and sound effects included, and they work for groups.
+
+## ❄️ Winter · 🍂 Fall · 🌷 Spring · 🎆 4th of July · ☀️ Summer
 
 [IMAGE: gifs/christmas.gif]
 
-**Snowfall**, **Christmas** and **Hanukkah** (with a menorah lit for the night you choose). Falling
-snow settles into a snowy floor that keeps every footprint and slowly fills it back in.
-
-## 🌷 Spring · 🍂 Fall
-
-[IMAGE: gifs/garden.gif]
-
-- **Spring Garden**: grass and flowers sprout and bloom wherever people walk.
-- **Fall Leaves**: kick through a carpet of autumn leaves that flutter on the wind.
-
-## 🎆 4th of July · ☀️ Summer
+- **Snowfall**, **Christmas** and **Hanukkah**: snow that keeps every shoe print and slowly fills it in.
+- **Fall Leaves**, **Spring Garden** (flowers bloom where you walk), **Fireworks**, **Fireflies**
+  and **Pool Splash**.
 
 [IMAGE: gifs/fireworks.gif]
-
-- **Fireworks**: a burst of color under every step.
-- **Pool Splash**: ripples as you wade, and a big splash when you jump in.
-- **Fireflies**: lightning bugs that follow you and slowly blink in sync.
-
-[IMAGE: gifs/pool.gif]
 
 ## How it works
 
 [IMAGE: how-it-works.png]
 
-- **Camera tracking:** point the phone's camera at the floor. On-device AI finds feet, or whole people in groups.
-- **Sound:** thunder, screams or music make the scenes pulse and flash.
+- **Camera tracking:** point the phone's camera at the floor and on-device AI finds feet, or whole
+  people in groups. Or use a **network / IR camera** (Wyze and other RTSP cameras) mounted overhead,
+  which works in the dark.
+- **Sound:** every scene has its own sound effects, and thunder, screams or music make the scenes pulse.
 - **Touch:** no camera needed. Your fingers on the phone act as feet.
 - **Cast button:** send the visuals to your projector or TV and use your phone as the remote.
+- **About & help** in the app has setup steps, a problem-report button and update checks.
 
 ## What you need
 
@@ -113,12 +132,13 @@ snow settles into a snowy floor that keeps every footprint and slowly fills it b
 2. If Android asks, allow installs from your browser or file manager.
 3. If you see "Blocked by Play Protect", tap **More details → Install anyway**. It's flagged only
    because it doesn't come from the Play Store.
-4. Future updates install over the old version and keep your settings.
+4. Updates install over the old version and keep your settings.
 
 ## Privacy
 
-Camera and microphone are processed **only on your phone**: nothing is recorded or uploaded. The
-app uses the internet only to check for a newer version.
+Camera and microphone are processed **only on your phone**: nothing is recorded or uploaded. A
+network camera streams only over your own Wi-Fi. The app uses the internet only to check for a newer
+version.
 
 **PhantomFloor is free.** If it made your party, a small donation keeps new scenes coming. ♥
 
@@ -129,47 +149,58 @@ app uses the internet only to check for a newer version.
 | Field | Value |
 |---|---|
 | Genre | Simulation |
-| Tags | `projection-mapping`, `halloween`, `christmas`, `interactive`, `android`, `procedural-generation`, `shaders`, `party`, `seasonal`, `particles` |
+| Tags (itch.io allows 10) | `projection-mapping`, `halloween`, `horror`, `jump-scare`, `interactive`, `android`, `procedural-generation`, `party`, `seasonal`, `local-multiplayer` |
 | AI generation disclosure | Answer honestly for the code and the art/text. |
-| Community | **Comments** on (people love posting their setups) |
+| Community | **Comments** on |
 
 ## Step 6: Images
 
-1. **Cover image**: upload `cover.png`.
-2. **Screenshots**: upload in this order. The first few appear without scrolling, so lead with motion:
-   1. `gifs/swarm.gif`
-   2. `gifs/fog.gif`
-   3. `gifs/christmas.gif`
-   4. `gifs/garden.gif`
-   5. `gifs/fireworks.gif`
-   6. `features/03-water.jpg`
-   7. `features/06-hanukkah.jpg`
-   8. `features/04-smoke.jpg`
-   9. `features/11-pool.jpg`
-   10. `features/12-keystone_edit.jpg`
-3. **Gameplay video / trailer**: once you've filmed the app in a real room, upload it to YouTube
-   and paste the link here. Footage of real feet scattering real-looking spiders sells it better
-   than anything else.
+1. **Cover image**: keep `cover.png`.
+2. **Screenshots**: replace the list with these, in this order. The first few appear without
+   scrolling, so lead with motion and the new scares:
+   1. `gifs/jumpscare.gif`
+   2. `gifs/swarm.gif`
+   3. `gifs/puppets.gif`
+   4. `features/19-giant_spider.jpg`
+   5. `features/14-eyes.jpg`
+   6. `features/16-puppets.jpg`
+   7. `features/18-radioactive.jpg`
+   8. `features/20-games.jpg`
+   9. `gifs/fog.gif`
+   10. `gifs/christmas.gif`
+   11. `features/13-jumpscare.jpg`
+   12. `features/12-keystone_edit.jpg`
+3. **Gameplay video / trailer**: a real-room clip of someone triggering the Jump Scare will outsell
+   everything above. Upload it to YouTube and paste the link here when you have one.
 
-## Step 7: Theme (on the page, click **Edit theme**)
+## Step 7: Theme
 
-| Setting | Value |
-|---|---|
-| Banner | `banner.png` |
-| Background | `#07070B` |
-| Inner background | `#0E0E15` |
-| Text | `#E6E6EE` |
-| Links / buttons | `#7CFF9B` |
-| Font | A clean sans-serif (e.g. Lato) |
+No change (banner `banner.png`, background `#07070B`, inner `#0E0E15`, text `#E6E6EE`, links `#7CFF9B`).
 
-## Step 8: Publish
+## Step 8: Save, then post the devlog
 
-Set **Visibility & access** to **Public**, click **Save**, then post the devlog below.
+Click **Save**, then **Devlog → Create devlog post** with the text below (title, then body). Attach
+`gifs/jumpscare.gif` and `gifs/puppets.gif` to the post.
 
-## Launch devlog: "PhantomFloor 1.1.0 is out"
+### Devlog: "PhantomFloor 1.4: things that go bump on the floor"
 
-> PhantomFloor 1.1.0 is here, and it isn't just for Halloween anymore. New in this release:
-> **Ground Smoke** (a real fluid simulation), **Snowfall / Christmas / Hanukkah**, **Fall Leaves**,
-> **Spring Garden**, **Fireworks**, **Fireflies** and **Pool Splash**. There's also a **Cast**
-> button that sends the visuals to your projector or TV and turns your phone into the remote. Post
-> a video of your setup in the comments. I'd love to see it!
+> Just in time for Halloween, PhantomFloor 1.4 is out, and it's the scariest update yet.
+>
+> **New: the Scary section.** The floor stays pitch black until someone walks on. Then a ghoul
+> lunges out of the dark screaming (**Jump Scare**), glowing eyes gather and a ring of teeth snaps
+> shut when you stand still (**Eyes in the Dark**), or the floor cracks open and hands claw at your
+> feet (**Grasping Hands**).
+>
+> **New: Shadow Puppets.** Candlelight, and the shadows of witches, ghosts, zombies and clawed hands
+> that wander the floor and come for you.
+>
+> **The Swarm grew teeth.** Realistic and radioactive spiders, a mix of sizes, glowing eyes, 3D
+> shadows from the flashlight, spiders that spin webs you can tear through, and a giant spider that
+> drops right in front of your guests.
+>
+> **Also since 1.1:** eight stomp-to-play floor games, sound effects for every scene, shoe-print
+> footprints in the snow, glowing footprints in the smoke, network / IR camera support (Wyze and other
+> RTSP cameras), an About & help page, and clearer menus.
+>
+> It's free; a small donation keeps new scenes coming. Post a video of your setup in the comments.
+> I'd love to see your guests jump!

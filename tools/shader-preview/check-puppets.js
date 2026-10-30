@@ -1,6 +1,7 @@
 // Renders the Shadow Puppets scene (puppet_floor.frag + puppet.frag) in headless WebGL2:
 // a gallery of every puppet and a scene with puppets gathering around a person.
 // Usage: PW=<path to playwright> node check-puppets.js <assets/shaders dir> <output dir>
+// Set SEQUENCE=1 to also render a 48-frame looping animation (seq_000.png ...).
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require(process.env.PW || 'playwright');
@@ -21,7 +22,7 @@ const scene = [[2, 0.55, 0.12, 0.18, 1.3, 1.0, 1.0, 1], [1, 1.12, 0.3, 0.17, 1.3
   const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
   await page.setContent('<canvas id=c width=960 height=540></canvas>');
-  const out = await page.evaluate(({ src, gallery, gallery2, scene, A }) => {
+  const out = await page.evaluate(({ src, gallery, gallery2, scene, A, seq }) => {
     const gl = document.getElementById('c').getContext('webgl2', { preserveDrawingBuffer: true });
     const mk = (v, f) => {
       const sh = (t, c, n) => { const x = gl.createShader(t); gl.shaderSource(x, c); gl.compileShader(x); if (!gl.getShaderParameter(x, gl.COMPILE_STATUS)) throw new Error(n + ': ' + gl.getShaderInfoLog(x)); return x; };
@@ -60,8 +61,22 @@ const scene = [[2, 0.55, 0.12, 0.18, 1.3, 1.0, 1.0, 1], [1, 1.12, 0.3, 0.17, 1.3
     draw('puppets_gallery', gallery);
     draw('puppets_gallery2', gallery2);
     draw('puppets', scene);
+    // SEQUENCE=1: a looping animation (frames seq_000...) of the cast walking, drifting and clawing.
+    if (seq) {
+      for (let f = 0; f < 48; f++) {
+        const t = f / 15;
+        const loop = f / 48;
+        draw('seq_' + String(f).padStart(3, '0'), [
+          [2, 0.35 + loop * 0.35, 0.12, 0.18, 1.3, t * 4.5, 0.6 + 0.4 * Math.sin(t), 1],
+          [1, 1.15 - loop * 0.2, 0.3 + 0.03 * Math.sin(t * 2), 0.17, 1.3, t * 2.2, 0.5 + 0.5 * Math.sin(t * 1.3), 0],
+          [0, 1.5 - loop * 0.25, 0.08, 0.17, 1.3, t * 5.0, 0.2, 0],
+          [3, 0.88, -0.02, 0.18, 1.3 + 0.2 * Math.sin(loop * 6.283), t * 3.0, 0.5 + 0.5 * Math.sin(loop * 6.283), 1],
+          [4, -0.1 + loop * 2.0, 0.68 + 0.04 * Math.sin(t * 3), 0.13, 1.2, t * 3.0, 0, 1],
+        ]);
+      }
+    }
     return res;
-  }, { src, gallery, gallery2, scene, A });
+  }, { src, gallery, gallery2, scene, A, seq: !!process.env.SEQUENCE });
   fs.mkdirSync(outDir, { recursive: true });
   for (const [k, v] of Object.entries(out)) fs.writeFileSync(path.join(outDir, k + '.png'), Buffer.from(v.split(',')[1], 'base64'));
   console.log('rendered', Object.keys(out).join(', '));
