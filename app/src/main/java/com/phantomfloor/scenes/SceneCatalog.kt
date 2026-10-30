@@ -20,6 +20,7 @@ object SceneCatalog {
         SwarmScene(),
         CursedFluidScene(),
         LivingWaterScene(),
+        ShadowPuppetsScene(),
         JumpScareScene(),
         EyesInTheDarkScene(),
         GraspingHandsScene(),
