@@ -1,10 +1,14 @@
 package com.phantomfloor.ui
 
+import android.content.res.ColorStateList
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.google.android.material.chip.Chip
 import com.google.android.material.slider.Slider
+import com.phantomfloor.R
 import com.phantomfloor.databinding.ActivityMainBinding
 import com.phantomfloor.engine.EngineSettings
 import com.phantomfloor.scenes.Scene
@@ -60,16 +64,27 @@ class ControlPanel(
         }
     }
 
-    /** Season chips on top; choosing one lists that season's scenes below. */
+    /**
+     * Two visibly different menus: categories are bold, coloured pill tabs with an icon; the
+     * chosen category's animations sit below in a card tinted with its colour, as squarer,
+     * outlined buttons with a check mark.
+     */
     private fun buildSeasons(selected: Season) {
         binding.seasonGroup.removeAllViews()
         for (season in scenes.map { it.season }.distinct()) {
             val chip = Chip(context).apply {
                 id = View.generateViewId()
-                text = season.label
+                text = "${season.icon}  ${season.label}"
                 isCheckable = true
                 isCheckedIconVisible = false
                 isChecked = season == selected
+                setTypeface(typeface, Typeface.BOLD)
+                textSize = 14f
+                chipMinHeight = dp(40f)
+                shapeAppearanceModel = shapeAppearanceModel.withCornerSize(dp(20f))
+                chipStrokeWidth = 0f
+                chipBackgroundColor = checkedColors(season.color, 0xFF26262E.toInt())
+                setTextColor(checkedColors(0xFF101014.toInt(), 0xFFE6E6EE.toInt()))
                 setOnClickListener { buildSceneChips(season) }
             }
             binding.seasonGroup.addView(chip)
@@ -78,6 +93,7 @@ class ControlPanel(
     }
 
     private fun buildSceneChips(season: Season) {
+        styleSceneCard(season)
         binding.sceneGroup.removeAllViews()
         scenes.forEachIndexed { i, scene ->
             if (scene.season != season) return@forEachIndexed
@@ -87,6 +103,13 @@ class ControlPanel(
                 isCheckable = true
                 isCheckedIconVisible = true
                 isChecked = i == currentScene
+                textSize = 13f
+                shapeAppearanceModel = shapeAppearanceModel.withCornerSize(dp(6f))
+                chipStrokeWidth = dp(1.5f)
+                chipStrokeColor = checkedColors(season.color, 0x55FFFFFF)
+                chipBackgroundColor = checkedColors(withAlpha(season.color, 0x40), 0x00000000)
+                checkedIconTint = ColorStateList.valueOf(season.color)
+                setTextColor(0xFFF2F2F6.toInt())
                 setOnClickListener {
                     if (currentScene != i) {
                         currentScene = i
@@ -99,6 +122,25 @@ class ControlPanel(
             binding.sceneGroup.addView(chip)
         }
     }
+
+    private fun styleSceneCard(season: Season) {
+        binding.sceneCard.background = GradientDrawable().apply {
+            cornerRadius = dp(14f)
+            setColor(withAlpha(season.color, 0x1F))
+            setStroke(dp(1f).toInt(), withAlpha(season.color, 0x66))
+        }
+        binding.sceneCardTitle.text = context.getString(R.string.section_animation) + " · " + season.label
+        binding.sceneCardTitle.setTextColor(season.color)
+    }
+
+    private fun checkedColors(checked: Int, unchecked: Int) = ColorStateList(
+        arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+        intArrayOf(checked, unchecked),
+    )
+
+    private fun withAlpha(color: Int, alpha: Int) = (color and 0x00FFFFFF) or (alpha shl 24)
+
+    private fun dp(v: Float) = v * context.resources.displayMetrics.density
 
     private fun buildParams() {
         val container = binding.paramContainer

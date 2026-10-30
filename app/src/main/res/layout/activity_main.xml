@@ -86,18 +86,42 @@
                 app:selectionRequired="true"
                 app:singleSelection="true" />
 
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/sceneGroup"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:selectionRequired="true"
-                app:singleSelection="true" />
-
+            <!-- Animations for the chosen category, in a card tinted with that category's colour. -->
             <LinearLayout
-                android:id="@+id/paramContainer"
+                android:id="@+id/sceneCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical" />
+                android:layout_marginTop="10dp"
+                android:orientation="vertical"
+                android:paddingStart="12dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:id="@+id/sceneCardTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.12"
+                    android:text="@string/section_animation"
+                    android:textAllCaps="true"
+                    android:textSize="12sp" />
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/sceneGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    app:chipSpacingVertical="6dp"
+                    app:selectionRequired="true"
+                    app:singleSelection="true" />
+
+                <LinearLayout
+                    android:id="@+id/paramContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
 
             <TextView
                 style="@style/PanelSection"

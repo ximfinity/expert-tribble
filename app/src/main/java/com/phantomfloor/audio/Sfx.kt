@@ -9,7 +9,10 @@ enum class Sfx(val loud: Boolean = false) {
     SIZZLE, CLICK, CHIRP, TONE_1, TONE_2, TONE_3, TONE_4,
 
     // Scary section
-    SCREAM(loud = true), STINGER(loud = true), HEARTBEAT, WHISPER, SNAP(loud = true), GROAN, RUMBLE;
+    SCREAM(loud = true), STINGER(loud = true), HEARTBEAT, WHISPER, SNAP(loud = true), GROAN, RUMBLE,
+
+    // Spiders and shadow puppets
+    HISS, CACKLE(loud = true), MOAN;
 
     internal fun voices(gain: Float, pan: Float, rng: Random): List<Voice> {
         val seed = rng.nextInt()
@@ -102,6 +105,21 @@ enum class Sfx(val loud: Boolean = false) {
             RUMBLE -> listOf(
                 NoiseVoice(1.8f, 0.25f, 260f, 70f, gain * 2.2f, pan, seed = seed),
                 CrackleVoice(1.6f, 25f, 1500f, gain * 1.2f, pan, seed + 1),
+            )
+            HISS -> listOf(
+                NoiseVoice(0.7f, 0.02f, 3500f, 2500f, gain * 0.9f, pan, highpass = true, seed = seed),
+                CrackleVoice(0.6f, 120f, 6000f, gain * 0.5f, pan, seed + 1),
+            )
+            // A witch's cackle: falling, nasal "heh-heh-heh" bursts.
+            CACKLE -> (0 until 6).map { i ->
+                val f = 760f - i * 45f + rng.nextFloat() * 30f
+                ToneVoice(f, f * 0.8f, 0.13f, 0.008f, Wave.SAW, gain * 0.22f, pan, ms(i * 0.15f))
+            } + listOf(NoiseVoice(1.0f, 0.02f, 3000f, 1800f, gain * 0.08f, pan, seed = seed))
+            // A ghostly "ooooh": a slow, wavering low tone with breath.
+            MOAN -> listOf(
+                ToneVoice(196f, 165f, 2.2f, 0.5f, Wave.TRIANGLE, gain * 0.35f, pan),
+                ToneVoice(198f, 167f, 2.2f, 0.5f, Wave.SINE, gain * 0.25f, pan),
+                WhisperVoice(2.0f, gain * 0.15f, pan, seed),
             )
             TONE_1 -> simon(330f, gain, pan)
             TONE_2 -> simon(392f, gain, pan)

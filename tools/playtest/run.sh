@@ -30,6 +30,7 @@ if [ -d "$PW" ]; then
   PW="$PW" NODE_PATH="$(dirname "$PW")" node tools/shader-preview/check.js app/src/main/assets/shaders "$OUT/scenes" > "$OUT/scenes/check.log" 2>&1 || echo "check.js failed, see $OUT/scenes/check.log"
   PW="$PW" NODE_PATH="$(dirname "$PW")" node tools/shader-preview/check-seasons.js app/src/main/assets/shaders "$OUT/scenes" > "$OUT/scenes/check-seasons.log" 2>&1 || echo "check-seasons.js failed, see $OUT/scenes/check-seasons.log"
   PW="$PW" NODE_PATH="$(dirname "$PW")" node tools/shader-preview/check-scary.js app/src/main/assets/shaders "$OUT/scenes" > "$OUT/scenes/check-scary.log" 2>&1 || echo "check-scary.js failed, see $OUT/scenes/check-scary.log"
+  PW="$PW" NODE_PATH="$(dirname "$PW")" node tools/shader-preview/check-puppets.js app/src/main/assets/shaders "$OUT/scenes" > "$OUT/scenes/check-puppets.log" 2>&1 || echo "check-puppets.js failed, see $OUT/scenes/check-puppets.log"
   PW="$PW" NODE_PATH="$(dirname "$PW")" node tools/playtest/game-frames.js app/src/main/assets/shaders app/build/playtest/frames "$OUT/games" > "$OUT/games.log" 2>&1 || echo "game-frames.js failed, see $OUT/games.log"
 else
   echo "Playwright not found; skipping scene previews (set PW=/path/to/playwright)."

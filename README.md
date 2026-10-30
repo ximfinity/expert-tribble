@@ -94,7 +94,7 @@ releases, so uninstall one before installing the other.
 2. **Tap** anywhere on the projection to open the control panel; tap again to close it.
 3. **Edit keystone**: drag the 4 corner handles until the glowing grid fits the floor. You can drag several corners at once. Press **Done** when finished. The corners are saved.
 4. **Calibrate camera to floor**: keep the floor clear and hold the camera still. The projector shows a black frame, then four white dots one at a time. The camera finds each dot and fits a camera→floor homography. This also absorbs the keystone and any camera tilt. The result is saved.
-5. Choose a scene and tune its sliders. Turn on **Show tracked points** to see green rings under detected feet.
+5. Pick a **category** (the coloured tabs: Halloween, Scary, Winter…), then an **animation** in the card below it, and tune its sliders. Turn on **Show tracked points** to see green rings under detected feet.
 
 With **Touch acts as a person** turned on, fingers on the screen act as feet. This lets you test every scene without the camera.
 
@@ -117,7 +117,7 @@ casting, or an HDMI / USB-C adapter.
 
 | Season | Scenes |
 |---|---|
-| Halloween | Ectoplasmic Fog, Ground Smoke, The Swarm, Cursed Fluid, Living Water |
+| Halloween | Ectoplasmic Fog, Ground Smoke, The Swarm, Cursed Fluid, Living Water, Shadow Puppets |
 | Scary | Jump Scare, Eyes in the Dark, Grasping Hands |
 | Winter | Snowfall, Christmas, Hanukkah |
 | Fall | Fall Leaves |
@@ -146,6 +146,31 @@ phone screen.
 | **Balloon Pop** | Balloons float across the floor. Pop them by stepping on them; gold ones are worth 5. |
 | **Floor is Lava** | Tiles cover the whole floor; they flash, then turn to lava, faster as the round goes on. Everyone has 3 lives; standing on lava costs one. Survive as long as you can (90 s round). |
 | **Coloring** | Free play: step on a colour swatch, then walk to paint. Pick an outline (pumpkin, star, heart, house, fish) and hold **CLEAR** to start over. |
+
+## Shadow Puppets and The Swarm's options
+
+| ![puppets](docs/previews/puppets.png) | ![realistic spiders and webs](docs/previews/swarm_realistic_webs.png) | ![radioactive](docs/previews/swarm_radioactive.png) |
+|---|---|---|
+
+**Shadow Puppets** lights the floor with flickering candlelight (or cold moonlight) and casts
+shadows of witches (walking, or riding a broom), sheet ghosts, shambling zombies and long clawed
+hands across it. They wander on their own; when someone walks on, zombies shamble over with arms
+out, ghosts drift close and lift their sleeves, witches circle and cackle, and hands creep in from
+the edges to claw at feet. Puppets fade away now and then and reappear elsewhere, so the cast keeps
+changing. Settings: how many, which cast, size, shadow length, how strongly they're drawn to people,
+speed, light level and candle/moonlight colour.
+
+**The Swarm** has new options:
+
+| Option | What it does |
+|---|---|
+| Mix of sizes | Mostly small spiders, some medium, a few huge ones. |
+| Realistic spiders | Three-segment hairy legs, banded and knobbly; patterned, rounded bodies with a glossy highlight, lit by the flashlight. |
+| Glowing eyes | From a faint glint to bright eyeshine with a halo. |
+| Radioactive spiders | Glowing green markings that pulse, and green light spilling onto the floor around each one. |
+| 3D shadows from the flashlight | Each spider casts its shadow away from the moving torch, longer and softer the further it is from the beam. |
+| Web building | Calm spiders stop and spin orb webs (spokes, then the spiral, with dew drops that catch the torch). Walking through a web tears it. |
+| Giant jump-scare spider | Every so often, with someone on the floor, a huge spider drops from above in front of them (its shadow rushes in first), rears up hissing, lunges, and scuttles away while the swarm scatters. |
 
 ## Scary
 
@@ -252,8 +277,9 @@ rejected while dragging. Touches are mapped back through the inverse homography.
 | Scene | Technique | Reacts to people | Reacts to sound |
 |---|---|---|---|
 | **Ectoplasmic Fog** | 2-level domain-warped simplex fBm, light-offset sample for fake volumetric self-shadowing, ridged-noise wisps, purple/green region mixing | Fog is pushed out, swirls around moving legs, follows their wake, and leaves a clear pocket with a glowing rim | Bass thickens the fog, loud sounds churn it faster, beats flash lightning |
-| **The Swarm** | CPU Boids (separation, alignment, cohesion, wander, stop-and-go, soft walls) on a uniform spatial grid; one instanced draw of SDF spiders with an animated tetrapod gait; a hand-held flashlight beam that sweeps the floor on a damped spring with hand tremor | Spiders flee from feet (fast feet scare more) and scurry out of the flashlight beam. Panic spreads to neighbours as a scatter wave. Eyes glow hotter when panicked | Loud onsets startle the whole swarm. Beats flash the lantern light |
+| **The Swarm** | CPU Boids (separation, alignment, cohesion, wander, stop-and-go, soft walls) on a uniform spatial grid; one instanced draw of SDF spiders with an animated tetrapod gait; a hand-held flashlight beam that sweeps the floor on a damped spring with hand tremor; per-spider shadows projected away from the torch; orb webs drawn as polar SDFs | Spiders flee from feet (fast feet scare more) and scurry out of the flashlight beam. Panic spreads to neighbours as a scatter wave. Eyes glow hotter when panicked | Loud onsets startle the whole swarm. Beats flash the lantern light |
 | **Cursed Fluid** | Flow-displaced animated Voronoi, bubbles that swell and pop, GPU wave-equation ripples; finite-difference normals with wet specular (blood) or glowing cracks (lava) | Pool tendrils creep toward each person; footsteps splash ripples | Bass boosts bubbling and lava heat; beats drop ripples |
+| **Shadow Puppets** | Side-view SDF silhouettes (witch, broom witch, ghost with see-through eyes, zombie, clawed hand) with procedural walk cycles, drawn as soft-edged shadows over a flickering candle-lit plaster floor | Puppets notice nearby people and come to them, reaching out; hands creep from the edges toward feet | — |
 | **Living Water** | Ripple simulation + a half-res monster height-field pass (tentacles, skeletal hand, screaming face, built from tube/dome primitives) + refracted Voronoi caustics | Monsters surface near people, turn toward them, and sink with a splash when stepped on; eyes in the water close as people approach | The face's mouth opens with loudness; loud beats summon a monster |
 | **Ground Smoke** | GPU stable fluids: splats, vorticity confinement, Jacobi pressure projection, semi-Lagrangian advection; a colour channel stirred in by motion; a fading footprint-glow field | Feet drag the smoke along, shove it aside and leave curling wakes. Moving through it tints it (rainbow by speed, or a fixed colour) and each step leaves a glowing shoe print | Bass makes the fog machines puff harder |
 | **Snowfall / Christmas / Hanukkah** | Snow-depth field (shoe-shaped prints with tread, left and right feet alternating along the walking direction; fresh snow refills them), instanced six-fold snowflakes with shadows, string lights, menorah | Footprints with crunching steps, flakes blown aside by passers-by | Beats brighten the scene |

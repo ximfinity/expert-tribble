@@ -1,7 +1,8 @@
 <resources>
     <string name="app_name">PhantomFloor</string>
     <string name="panel_title">PhantomFloor</string>
-    <string name="section_scene">Scene</string>
+    <string name="section_scene">Category</string>
+    <string name="section_animation">Animation</string>
     <string name="section_projection">Projection</string>
     <string name="section_interaction">Interaction</string>
     <string name="section_audio">Audio</string>
