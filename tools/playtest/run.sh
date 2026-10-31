@@ -11,8 +11,8 @@ cd "$(dirname "$0")/../.."
 OUT="${1:-build/playtest}"
 mkdir -p "$OUT/panel" "$OUT/scenes" "$OUT/games"
 
-./gradlew :app:testDebugUnitTest --tests '*PlaytestTest*' --tests '*TraceTest*' --tests '*PanelScreenshotTest*' --console=plain -q
-cp app/build/playtest/report.md app/build/playtest/*.txt "$OUT/"
+./gradlew :shared:jvmTest --tests '*PlaytestTest*' --tests '*TraceTest*' :app:testDebugUnitTest --tests '*PanelScreenshotTest*' --console=plain -q
+cp shared/build/playtest/report.md shared/build/playtest/*.txt "$OUT/"
 
 # Paparazzi names images by hash; copy them out under their snapshot names.
 python3 - "$OUT/panel" <<'PY'
@@ -31,7 +31,7 @@ if [ -d "$PW" ]; then
   PW="$PW" NODE_PATH="$(dirname "$PW")" node tools/shader-preview/check-seasons.js app/src/main/assets/shaders "$OUT/scenes" > "$OUT/scenes/check-seasons.log" 2>&1 || echo "check-seasons.js failed, see $OUT/scenes/check-seasons.log"
   PW="$PW" NODE_PATH="$(dirname "$PW")" node tools/shader-preview/check-scary.js app/src/main/assets/shaders "$OUT/scenes" > "$OUT/scenes/check-scary.log" 2>&1 || echo "check-scary.js failed, see $OUT/scenes/check-scary.log"
   PW="$PW" NODE_PATH="$(dirname "$PW")" node tools/shader-preview/check-puppets.js app/src/main/assets/shaders "$OUT/scenes" > "$OUT/scenes/check-puppets.log" 2>&1 || echo "check-puppets.js failed, see $OUT/scenes/check-puppets.log"
-  PW="$PW" NODE_PATH="$(dirname "$PW")" node tools/playtest/game-frames.js app/src/main/assets/shaders app/build/playtest/frames "$OUT/games" > "$OUT/games.log" 2>&1 || echo "game-frames.js failed, see $OUT/games.log"
+  PW="$PW" NODE_PATH="$(dirname "$PW")" node tools/playtest/game-frames.js app/src/main/assets/shaders shared/build/playtest/frames "$OUT/games" > "$OUT/games.log" 2>&1 || echo "game-frames.js failed, see $OUT/games.log"
 else
   echo "Playwright not found; skipping scene previews (set PW=/path/to/playwright)."
 fi

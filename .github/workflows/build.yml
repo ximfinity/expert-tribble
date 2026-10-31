@@ -21,7 +21,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Build debug APK and run unit tests
-        run: ./gradlew assembleDebug testDebugUnitTest --console=plain
+        run: ./gradlew assembleDebug testDebugUnitTest :shared:jvmTest --console=plain
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

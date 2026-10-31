@@ -11,3 +11,4 @@
 *.apk
 *.aab
 .kotlin/
+/shared/build/

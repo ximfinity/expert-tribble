@@ -61,7 +61,7 @@ jobs:
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: >
-          ./gradlew assembleRelease testReleaseUnitTest --console=plain
+          ./gradlew assembleRelease testReleaseUnitTest :shared:jvmTest --console=plain
           -PappVersionName="$VERSION" -PappVersionCode="${{ github.run_number }}"
 
       - name: Verify signature and rename
