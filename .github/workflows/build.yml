@@ -20,8 +20,14 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Build debug APK and run unit tests
-        run: ./gradlew assembleDebug testDebugUnitTest --console=plain
+      - name: Build debug APK and web version, run unit tests
+        run: ./gradlew assembleDebug testDebugUnitTest :shared:jvmTest :shared:webDist --console=plain
+
+      - name: Smoke-test the web version in headless Chrome
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.47.2
+          npx playwright install --with-deps chromium
+          node tools/web/smoke.js shared/build/dist/web web-smoke 0.6
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -29,3 +35,18 @@ jobs:
           name: PhantomFloor-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
+
+      - name: Upload web version
+        uses: actions/upload-artifact@v4
+        with:
+          name: PhantomFloor-web
+          path: shared/build/dist/web
+          retention-days: 30
+
+      - name: Upload web smoke-test screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-smoke-screenshots
+          path: web-smoke
+          retention-days: 7

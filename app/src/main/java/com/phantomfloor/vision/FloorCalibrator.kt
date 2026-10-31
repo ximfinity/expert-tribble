@@ -1,5 +1,6 @@
 package com.phantomfloor.vision
 
+import com.phantomfloor.engine.CalibrationView
 import com.phantomfloor.util.Homography
 
 /**
@@ -14,17 +15,17 @@ import com.phantomfloor.util.Homography
 class FloorCalibrator(
     private val mapping: FloorMapping,
     private val onFinished: (success: Boolean, message: String) -> Unit,
-) {
+) : CalibrationView {
     enum class Phase { IDLE, BASELINE, MARKER }
 
     @Volatile var phase = Phase.IDLE
         private set
 
     /** Marker the projector should show now, or -1 for none (black frame). */
-    @Volatile var markerIndex = -1
+    @Volatile override var markerIndex = -1
         private set
 
-    val isActive get() = phase != Phase.IDLE
+    override val isActive get() = phase != Phase.IDLE
 
     /**
      * How long the camera takes to show a change on the floor beyond a phone camera's own delay.
@@ -125,7 +126,7 @@ class FloorCalibrator(
 
     companion object {
         /** Marker positions in canvas UV; order matches a counter-clockwise quad. */
-        val TARGETS = floatArrayOf(0.2f, 0.2f, 0.8f, 0.2f, 0.8f, 0.8f, 0.2f, 0.8f)
+        val TARGETS = CalibrationView.TARGETS
         const val GRID_W = 96
         const val GRID_H = 72
         private const val SETTLE_MS = 900L

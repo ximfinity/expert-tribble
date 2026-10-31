@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "PhantomFloor"
-include(":app")
+include(":app", ":shared")

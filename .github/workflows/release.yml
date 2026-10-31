@@ -61,7 +61,7 @@ jobs:
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: >
-          ./gradlew assembleRelease testReleaseUnitTest --console=plain
+          ./gradlew assembleRelease testReleaseUnitTest :shared:jvmTest :shared:webZip --console=plain
           -PappVersionName="$VERSION" -PappVersionCode="${{ github.run_number }}"
 
       - name: Verify signature and rename
@@ -69,6 +69,7 @@ jobs:
           APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
           "$APKSIGNER" verify --print-certs app/build/outputs/apk/release/app-release.apk
           cp app/build/outputs/apk/release/app-release.apk "PhantomFloor-$VERSION.apk"
+          cp "shared/build/dist/PhantomFloor-web-$VERSION.zip" .
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -76,7 +77,9 @@ jobs:
           tag_name: v${{ env.VERSION }}
           target_commitish: ${{ github.sha }}
           name: PhantomFloor ${{ env.VERSION }}
-          files: PhantomFloor-${{ env.VERSION }}.apk
+          files: |
+            PhantomFloor-${{ env.VERSION }}.apk
+            PhantomFloor-web-${{ env.VERSION }}.zip
           generate_release_notes: true
 
       - name: Upload to itch.io
@@ -85,6 +88,8 @@ jobs:
           curl -sSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
           unzip -q butler.zip -d butler && chmod +x butler/butler
           ./butler/butler push "PhantomFloor-$VERSION.apk" "$ITCH_TARGET" --userversion "$VERSION"
+          # The browser version goes to the same page's "html5" channel (e.g. you/game:html5).
+          ./butler/butler push shared/build/dist/web "${ITCH_TARGET%:*}:html5" --userversion "$VERSION"
 
       - name: Note skipped itch.io upload
         if: env.BUTLER_API_KEY == '' || env.ITCH_TARGET == ''

@@ -88,6 +88,9 @@ android {
 }
 
 dependencies {
+    // Scenes, games, sound synthesis and the frame loop, shared with the browser build
+    implementation(project(":shared"))
+
     // AndroidX + UI
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
@@ -115,9 +118,4 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer-rtsp:$media3")
 
     testImplementation("junit:junit:4.13.2")
-}
-
-// Longer bot sessions: ./gradlew :app:testDebugUnitTest --tests '*PlaytestTest*' -PplaytestSeconds=600
-tasks.withType<Test>().configureEach {
-    (findProperty("playtestSeconds") as String?)?.let { systemProperty("playtest.seconds", it) }
 }

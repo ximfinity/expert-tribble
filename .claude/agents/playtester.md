@@ -17,7 +17,7 @@ code to explain what you saw.
 
 Run `tools/playtest/run.sh` (about 2 minutes). It writes `build/playtest/`:
 
-- `report.md` comes from simulated players (`app/src/test/java/com/phantomfloor/playtest/FloorBot.kt`).
+- `report.md` comes from simulated players (`shared/src/jvmTest/kotlin/com/phantomfloor/playtest/FloorBot.kt`).
   - The players see only what is drawn on the floor: shapes and text, via `GameScene.snapshot`.
   - They play every scored game as four personas: kid, adult, casual, and a wanderer who ignores the game.
   - The report covers time to start, round lengths, scores, endings, sounds, and text that overflows or overlaps.
@@ -33,7 +33,7 @@ Look at every PNG with the Read tool. To test a hunch, change or extend the harn
 - a new panel screenshot (`app/src/test/java/com/phantomfloor/ui/PanelScreenshotTest.kt`).
 
 Re-run only what you need:
-`./gradlew :app:testDebugUnitTest --tests '*PlaytestTest*'`
+`./gradlew :shared:jvmTest --tests '*PlaytestTest*'`
 
 Bots are approximations. Before you blame the game, check that a surprising result isn't a bot bug:
 trace it, then read the game's code.
