@@ -94,6 +94,22 @@ const server = http.createServer((req, res) => {
   results.push('keystone saved: ' + saved);
   const audio = await page.evaluate(() => typeof AudioContext !== 'undefined');
   results.push('Web Audio available: ' + audio);
+  // Opened straight from disk (double-clicking index.html in the unzipped folder) must work too.
+  const local = await browser.newPage({ viewport: { width: 960, height: 540 } });
+  local.on('pageerror', e => problems.push('file:// pageerror: ' + e.message));
+  local.on('console', m => { if (m.type() === 'error') problems.push('file:// console: ' + m.text()); });
+  await local.goto('file://' + path.join(dist, 'index.html'));
+  await local.waitForTimeout(3000);
+  const fileState = await local.evaluate(() => ({
+    loading: getComputedStyle(document.getElementById('loading')).display,
+    error: document.getElementById('error').textContent,
+  }));
+  if (fileState.loading !== 'none' || fileState.error) problems.push('file:// did not start: ' + JSON.stringify(fileState));
+  await local.click('#start');
+  await local.mouse.move(400, 300);
+  await local.waitForTimeout(800);
+  await local.screenshot({ path: path.join(out, '98-file_url.png') });
+  results.push('file:// start: ' + JSON.stringify(fileState));
   console.log(results.join('\n'));
   await browser.close();
   server.close();

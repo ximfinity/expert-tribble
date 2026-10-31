@@ -95,8 +95,7 @@ for fullscreen and **K** to fit the corners (keystone).
 
 Settings, sliders and keystone are remembered in the browser. Each release puts
 `PhantomFloor-web-<version>.zip` on the GitHub Release (and on itch.io as a "play in browser"
-build); unzip it and serve the folder from any web server. Opening `index.html` straight from
-disk won't work, because browsers don't load modules and shaders from `file://` pages.
+build). Unzip it and double-click `index.html`, or put the folder on any web host.
 
 Not in the web version yet: camera tracking, microphone reactivity and the RTSP camera.
 
@@ -107,7 +106,7 @@ Not in the web version yet: camera tracking, microphone reactivity and the RTSP 
 ./gradlew testDebugUnitTest      # app unit tests (panel screenshots, RTSP, update check)
 ./gradlew :shared:jvmTest        # scenes, games, sound and play-test bots
 ./gradlew :shared:webDist        # browser version in shared/build/dist/web
-python3 -m http.server -d shared/build/dist/web 8000   # then open http://localhost:8000
+# then open shared/build/dist/web/index.html in Chrome (or serve the folder from any web host)
 node tools/web/smoke.js shared/build/dist/web build/web-smoke   # every animation in headless Chrome
 ```
 
