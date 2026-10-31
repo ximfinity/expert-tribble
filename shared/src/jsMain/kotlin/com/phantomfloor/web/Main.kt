@@ -39,13 +39,16 @@ private fun boot() {
     }.catch { e -> showError("Couldn't load the shaders: ${e.message}") }
 }
 
-/** Fetches every shader listed in shaders/manifest.json (written by the build). */
-private fun loadShaders(): Promise<Map<String, String>> =
-    window.fetch("shaders/manifest.json").then { it.json() }.then { list ->
-        val names = (list.unsafeCast<Array<String>>()).toList()
-        Promise.all(names.map { n -> window.fetch("shaders/$n").then { it.text() } }.toTypedArray())
-            .then { texts -> names.zip(texts.toList()).toMap() }
-    }.unsafeCast<Promise<Map<String, String>>>()
+/**
+ * Shader sources: embedded by the build in shaders.js (window.PHANTOM_SHADERS), so nothing has
+ * to be fetched and the page also works from file://.
+ */
+private fun loadShaders(): Promise<Map<String, String>> {
+    val embedded: dynamic = window.asDynamic().PHANTOM_SHADERS
+        ?: return Promise.reject(IllegalStateException("shaders.js is missing"))
+    val names = js("Object.keys")(embedded).unsafeCast<Array<String>>()
+    return Promise.resolve(names.associateWith { embedded[it].unsafeCast<String>() })
+}
 
 fun showError(message: String) {
     val box = document.getElementById("error") as HTMLElement? ?: return

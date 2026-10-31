@@ -32,21 +32,17 @@
     // If the app can't start, say why instead of leaving "Loading…" up forever.
     function phantomFail(msg) {
       var e = document.getElementById('error');
+      if (e.style.display === 'block') return; // keep the first, most specific message
       e.textContent = msg;
       e.style.display = 'block';
       document.getElementById('loading').style.display = 'none';
     }
-    if (location.protocol === 'file:') {
-      phantomFail('PhantomFloor has to be opened from a web server, not straight from the file. ' +
-        'In the unzipped folder run "python3 -m http.server" and open http://localhost:8000');
-    }
     window.phantomStarted = false;
     setTimeout(function () {
-      if (!window.phantomStarted && document.getElementById('error').style.display !== 'block') {
-        phantomFail('PhantomFloor did not start. Try reloading, or use a recent Chrome, Edge, Firefox or Safari.');
-      }
+      if (!window.phantomStarted) phantomFail('PhantomFloor did not start. Try reloading, or use a recent Chrome, Edge, Firefox or Safari.');
     }, 20000);
   </script>
-  <script type="module" src="phantomfloor.js" onerror="phantomFail('Couldn\'t load phantomfloor.js. Check that every file from the zip was uploaded.')"></script>
+  <script src="shaders.js" onerror="phantomFail('Couldn\'t load shaders.js. Keep all the files from the zip together in one folder.')"></script>
+  <script src="phantomfloor.js" onerror="phantomFail('Couldn\'t load phantomfloor.js. Keep all the files from the zip together in one folder.')"></script>
 </body>
 </html>
