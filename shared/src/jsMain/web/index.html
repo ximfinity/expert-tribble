@@ -28,6 +28,25 @@
   <button id="menu" title="Menu (Space)">☰</button>
   <aside id="panel"></aside>
 
-  <script type="module" src="phantomfloor.mjs"></script>
+  <script>
+    // If the app can't start, say why instead of leaving "Loading…" up forever.
+    function phantomFail(msg) {
+      var e = document.getElementById('error');
+      e.textContent = msg;
+      e.style.display = 'block';
+      document.getElementById('loading').style.display = 'none';
+    }
+    if (location.protocol === 'file:') {
+      phantomFail('PhantomFloor has to be opened from a web server, not straight from the file. ' +
+        'In the unzipped folder run "python3 -m http.server" and open http://localhost:8000');
+    }
+    window.phantomStarted = false;
+    setTimeout(function () {
+      if (!window.phantomStarted && document.getElementById('error').style.display !== 'block') {
+        phantomFail('PhantomFloor did not start. Try reloading, or use a recent Chrome, Edge, Firefox or Safari.');
+      }
+    }, 20000);
+  </script>
+  <script type="module" src="phantomfloor.js" onerror="phantomFail('Couldn\'t load phantomfloor.js. Check that every file from the zip was uploaded.')"></script>
 </body>
 </html>

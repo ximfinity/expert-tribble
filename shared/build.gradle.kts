@@ -49,7 +49,13 @@ val webDist by tasks.registering(Sync::class) {
     description = "Builds the browser version into build/dist/web"
     dependsOn("jsProductionExecutableCompileSync")
     inputs.property("version", webVersion)
-    from(layout.buildDirectory.dir("compileSync/js/main/productionExecutable/kotlin")) { include("*.mjs") }
+    // Shipped as .js: many static hosts (itch.io's CDN among them) don't serve .mjs with a
+    // JavaScript type, and browsers refuse to run a module served as anything else.
+    from(layout.buildDirectory.dir("compileSync/js/main/productionExecutable/kotlin")) {
+        include("*.mjs")
+        rename { it.removeSuffix(".mjs") + ".js" }
+        filter { it.replace(".mjs'", ".js'").replace(".mjs\"", ".js\"") }
+    }
     from("src/jsMain/web") {
         filesMatching("index.html") { filter { it.replace("@VERSION@", webVersion) } }
     }

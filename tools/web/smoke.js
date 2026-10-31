@@ -11,12 +11,14 @@ const dist = path.resolve(process.argv[2]);
 const out = path.resolve(process.argv[3]);
 const perScene = Number(process.argv[4] || 1.6);
 fs.mkdirSync(out, { recursive: true });
-const types = { '.html': 'text/html', '.mjs': 'text/javascript', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
+// Like a typical static host (itch.io's CDN, S3, GitHub Pages): only common extensions get a
+// specific type; anything else is a generic download, which browsers refuse to run as a module.
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
 
 const server = http.createServer((req, res) => {
   const file = path.join(dist, decodeURIComponent(req.url.split('?')[0]).replace(/\/$/, '/index.html'));
   if (!file.startsWith(dist) || !fs.existsSync(file)) { res.writeHead(404); res.end(); return; }
-  res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'text/plain' });
+  res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream' });
   fs.createReadStream(file).pipe(res);
 });
 
