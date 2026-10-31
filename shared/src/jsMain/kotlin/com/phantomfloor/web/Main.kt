@@ -27,6 +27,7 @@ fun main() {
 }
 
 private fun boot() {
+    window.asDynamic().phantomStarted = true
     val status = document.getElementById("loading") as HTMLElement?
     loadShaders().then { shaders ->
         status?.style?.display = "none"
