@@ -36,6 +36,13 @@ download"** on.
 Once the 1.4.0 release finishes, the Release workflow has already uploaded `PhantomFloor-1.4.0.apk`
 to the `android` channel, replacing 1.3.0. Check it's ticked **Android**. Nothing else to upload.
 
+## Step 3b: Play in browser (from 1.5.0)
+
+Releases from 1.5.0 on also upload a browser version to the `html5` channel. On that file, tick
+**This file will be played in the browser**, set **Embed options** to *Click to launch in
+fullscreen* (or 960 × 540 with the fullscreen button), and tick **Mobile friendly**. Visitors can
+then try every animation right on the page with their mouse.
+
 ## Step 4: Description
 
 Select all of the old description and replace it with the text between the lines below. Wherever

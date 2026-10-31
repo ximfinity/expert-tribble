@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>PhantomFloor</title>
+  <meta name="description" content="Interactive procedural floor projections: fog, spiders, shadows, jump scares and floor games, generated live in your browser.">
+  <meta name="theme-color" content="#000000">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="floor"></canvas>
+
+  <div id="start">
+    <div class="start-box">
+      <h1>PhantomFloor</h1>
+      <p class="tag">Interactive floor projections, generated live</p>
+      <button class="go">▶ Click to start</button>
+      <p class="hint">Move your mouse (or fingers) over it: it reacts to them like feet on a floor.</p>
+      <p class="hint"><b>Space</b> menu · <b>F</b> fullscreen · <b>K</b> keystone · <b>←/→</b> change animation</p>
+      <p class="hint small">For a real floor, connect a projector, go fullscreen and fit the corners with keystone.</p>
+      <p class="version">v@VERSION@</p>
+    </div>
+  </div>
+
+  <div id="loading">Loading…</div>
+  <div id="error"></div>
+  <button id="menu" title="Menu (Space)">☰</button>
+  <aside id="panel"></aside>
+
+  <script type="module" src="phantomfloor.mjs"></script>
+</body>
+</html>

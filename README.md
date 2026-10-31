@@ -79,12 +79,44 @@ Every pull request and push to `main` builds a test APK. Open **Actions → Buil
 run, and download **PhantomFloor-debug-apk**. Test builds are signed with a different key than
 releases, so uninstall one before installing the other.
 
+## Web version (Chrome and other browsers)
+
+Every animation, game and sound also runs in a browser (WebGL2), from the same code as the app.
+Open it, click **Start**, and move your mouse or fingers over it: they act as feet. For a real
+floor, plug a laptop or mini-PC into the projector over HDMI, open the page in Chrome, press **F**
+for fullscreen and **K** to fit the corners (keystone).
+
+| Key | Does |
+|---|---|
+| Space or M | Open / close the menu (or use the ☰ button, which appears when the mouse moves) |
+| F | Fullscreen |
+| K | Edit keystone: drag the corners onto the floor, then K again |
+| ← / → | Previous / next animation |
+
+Settings, sliders and keystone are remembered in the browser. Each release puts
+`PhantomFloor-web-<version>.zip` on the GitHub Release (and on itch.io as a "play in browser"
+build); unzip it and serve the folder from any web server. Opening `index.html` straight from
+disk won't work, because browsers don't load modules and shaders from `file://` pages.
+
+Not in the web version yet: camera tracking, microphone reactivity and the RTSP camera.
+
 ## Build
 
 ```bash
 ./gradlew assembleDebug          # app/build/outputs/apk/debug/app-debug.apk
-./gradlew testDebugUnitTest      # homography, FFT and version-compare unit tests
+./gradlew testDebugUnitTest      # app unit tests (panel screenshots, RTSP, update check)
+./gradlew :shared:jvmTest        # scenes, games, sound and play-test bots
+./gradlew :shared:webDist        # browser version in shared/build/dist/web
+python3 -m http.server -d shared/build/dist/web 8000   # then open http://localhost:8000
+node tools/web/smoke.js shared/build/dist/web build/web-smoke   # every animation in headless Chrome
 ```
+
+The code is split into two modules. **`:shared`** (Kotlin Multiplatform, JVM + JS) holds
+everything that isn't tied to a platform: scenes, games, sound synthesis and the frame loop
+(`PhantomEngine`). It draws through a `GLES30` facade with Android's names, backed by OpenGL ES on
+the phone (`AndroidGlBackend`) and WebGL2 in the browser (`WebGlBackend`). **`:app`** is the Android
+shell: camera and ML Kit, microphone, the control panel, casting. Shaders live in
+`app/src/main/assets/shaders` and are copied into the web build.
 
 `ndk.abiFilters` keeps only ARM ABIs, because ML Kit's native libraries are large. Add `x86_64` to run on an emulator.
 

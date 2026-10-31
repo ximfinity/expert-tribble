@@ -63,6 +63,16 @@ them again, masks them in logs, and doesn't give them to pull requests from fork
 The first upload creates the `android` channel on the page. Mark that file as **Android** in the
 itch.io upload settings once.
 
+### 3b. The browser version on itch.io
+
+The workflow also pushes the web build to the `html5` channel of the same page (for example
+`yourname/phantomfloor:html5`). After the first release that includes it, on the itch.io page:
+
+1. **Edit game → Uploads**: on the `html5` file, tick **This file will be played in the browser**.
+2. **Embed options**: choose **Click to launch in fullscreen**, or embed at **960 × 540** and tick
+   **Fullscreen button**. **Mobile friendly** can be on (fingers act as feet).
+3. Kind of project can stay **Downloadable**; itch.io shows the browser build above the downloads.
+
 ### 4. App links
 
 In `gradle.properties`:

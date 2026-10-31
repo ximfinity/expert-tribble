@@ -45,8 +45,11 @@ class RenderTarget private constructor(
             GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0, GLES30.GL_TEXTURE_2D, tex, 0)
             val status = GLES30.glCheckFramebufferStatus(GLES30.GL_FRAMEBUFFER)
             if (status == GLES30.GL_FRAMEBUFFER_COMPLETE) {
-                GLES30.glClearColor(0f, 0f, 0f, 1f)
+                // Float targets hold simulation data, so every channel starts at zero (an alpha of
+                // 1 would read as stray dye/colour); colour canvases start opaque black.
+                GLES30.glClearColor(0f, 0f, 0f, if (format == Format.RGBA16F) 0f else 1f)
                 GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
+                GLES30.glClearColor(0f, 0f, 0f, 1f)
             }
             GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0)
             val target = RenderTarget(w, h, tex, fbo)

@@ -12,3 +12,4 @@
 *.aab
 .kotlin/
 /shared/build/
+node_modules/
